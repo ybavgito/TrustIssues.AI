@@ -162,19 +162,16 @@ for a in approvals:
 high_priority = [a for a in approvals if a["risk_score"] >= 60]
 pending_approvals = [a for a in approvals if a not in high_priority]
 
-# Sorting logic
 if sort_by == "Risk Score (high → low)":
     approvals_sorted = sorted(pending_approvals, key=lambda x: x["risk_score"], reverse=True)
 else:
     approvals_sorted = sorted(pending_approvals, key=lambda x: x["last_submission_dt"], reverse=True)
 
-# --- Navigation Function ---
 def navigate_to_vendor(case_id):
    st.session_state["case_id"] = case_id
    st.switch_page("pages/vendor-info.py")
 
 
-# --- Corrected display_cards function for approval-page.py ---
 def display_cards(data, is_high_priority=False):
     cols_per_row = 3
     for i in range(0, len(data), cols_per_row):
@@ -183,15 +180,12 @@ def display_cards(data, is_high_priority=False):
             col = cols[idx]
             card_class = "high-priority" if is_high_priority else "pending"
             
-            # Only display items awaiting approval
             if approval['status'] != 'Awaiting Approval':
                  continue
                  
             with col:
-                # 1. Use st.container() to hold the card's content
                 with st.container():
                     
-                    # 2. Start the HTML card container and all its content (excluding the button)
                     st.markdown(
                         f"""
                         <div class="card {card_class}">
