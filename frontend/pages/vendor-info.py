@@ -78,45 +78,6 @@ def update_status(case_id, new_status):
             break
     st.rerun() 
 
-
-def fetch_risk_factors(vendor_name):
-    """
-    Simulates an API call to get risk factors for a specific vendor.
-    
-    The weights sum up to 100%. This data would typically come from an external API.
-    """
-    random.seed(hash(vendor_name) % (2**32 - 1)) # Use vendor name for deterministic simulation
-    
-    factors = ["Financial Stability", "Security Compliance", "Service Reliability", "Operational History"]
-    
-    weights = [random.randint(1, 100) for _ in factors]
-    total_weight = sum(weights)
-    weights = [(w / total_weight) * 100 for w in weights] # Normalize to 100
-    
-    return pd.DataFrame({
-        'Factor': factors,
-        'Weight (%)': weights
-    })
-
-
-vendor_risk_df = fetch_risk_factors(vendor_case['vendor'])
-
-fig = px.pie(
-    vendor_risk_df,
-    values='Weight (%)',
-    names='Factor',
-    title=f'Risk Factor Distribution for {vendor_case["vendor"]}',
-    hole=.4, 
-    color_discrete_sequence=px.colors.sequential.RdBu 
-)
-
-fig.update_traces(textposition='inside', textinfo='percent+label', 
-                  hovertemplate="<b>%{label}</b><br>Weight: %{value:.2f}%<extra></extra>")
-fig.update_layout(showlegend=True)
-
-# Display the chart
-st.plotly_chart(fig, use_container_width=True)
-
 st.subheader("Decision")
 col1, col2 = st.columns([1,1])
 
