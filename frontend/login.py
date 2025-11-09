@@ -156,18 +156,15 @@ div[data-testid="stAlert"] {
                 user_info = USER_CREDENTIALS.get(username)
 
                 if user_info and user_info["password"] == password:
-                    # 1. Set Session State variables
                     st.session_state["logged_in"] = True
                     st.session_state["role"] = user_info["role"]
                     st.success(f"Login Successful! Redirecting as {user_info['role']}...")
-                    time.sleep(1) # Visual delay for the user
+                    time.sleep(1) 
 
-                    # 2. Perform Role-Based Redirection
                     if st.session_state["role"] == "admin":
-                        st.switch_page(ADMIN_PAGE) # Redirect to pages/approve-page.py
+                        st.switch_page(ADMIN_PAGE) 
                     elif st.session_state["role"] == "vendor":
-                        st.switch_page(VENDOR_PAGE) # Redirect to pages/vendor.py
-                    # st.switch_page stops execution
+                        st.switch_page(VENDOR_PAGE)
                 else:
                     st.error("Invalid Username or Password")
 
