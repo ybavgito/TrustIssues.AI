@@ -171,7 +171,6 @@ else:
 # --- Navigation Function ---
 def navigate_to_vendor(case_id):
    st.session_state["case_id"] = case_id
-
    st.switch_page("pages/vendor-info.py")
 
 

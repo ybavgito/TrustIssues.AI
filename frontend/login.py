@@ -159,7 +159,6 @@ div[data-testid="stAlert"] {
                     # 1. Set Session State variables
                     st.session_state["logged_in"] = True
                     st.session_state["role"] = user_info["role"]
-
                     st.success(f"Login Successful! Redirecting as {user_info['role']}...")
                     time.sleep(1) # Visual delay for the user
 
