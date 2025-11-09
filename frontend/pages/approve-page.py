@@ -12,10 +12,22 @@ st.set_page_config(page_title="RiskLens AI Approvals", layout="wide")
 
 st.markdown("""
 <style>
+/* --- 0. CRITICAL STREAMLIT OVERRIDES --- */
+
+/* Remove default padding/margin on Streamlit containers in the column */
+div[data-testid*="stVerticalBlock"] > div:first-child > div:nth-child(2) {
+    margin-bottom: 0px !important;
+    padding-bottom: 0px !important;
+}
+
+/* --- 1. GENERAL LAYOUT (Dark Mode) --- */
 body {
-    background: linear-gradient(to right, #f0f4f8, #d9e2ec);
+    /* Dark background gradient */
+    background: linear-gradient(to right, #121212, #1e1e1e);
+    color: #f0f0f0; /* Default text color for dark mode */
 }
 .navbar {
+    /* Retain original accent color for a striking title bar */
     background: linear-gradient(90deg, #0FB5A8, #056D63);
     padding: 15px;
     border-radius: 10px;
@@ -25,18 +37,100 @@ body {
     color: white;
     margin-bottom: 25px;
 }
+h3 {
+    color: #f0f0f0; /* Ensure Streamlit subheaders are visible */
+}
+
+/* --- 2. PREMIUM CARD STYLES --- */
 .card {
-    border-radius: 10px;
-    padding: 15px;
-    margin-bottom: 20px;
-    box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+    /* Card background: Darker shade of gray for depth */
+    background-color: #2a2a2a; 
+    border-radius: 16px;      /* Softer, more premium corner radius */
+    padding: 25px;            /* Increased padding for an airy feel */
+    margin-bottom: 30px;      /* Generous bottom margin to separate cards */
+    
+    /* Deep, soft, multi-layer shadow for a "floating" effect */
+    box-shadow: 
+        0 10px 30px rgba(0, 0, 0, 0.3), /* Deeper shadow on dark background */
+        0 4px 8px rgba(0, 0, 0, 0.2); 
+    
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); /* Smooth, premium transition */
+    cursor: pointer;
+    border: 1px solid #444444; /* Subtle separation border */
 }
+
+/* Hover effect: Card lifts and shadow deepens */
+.card:hover {
+    transform: translateY(-8px); 
+    box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.5),
+        0 8px 16px rgba(0, 0, 0, 0.3); 
+}
+
+/* --- 3. PRIORITY COLOR SCHEME (Mauve/Teal) --- */
+
+/* High Priority: Mauve/Crimson for urgency */
 .high-priority {
-    background: linear-gradient(135deg, #ffcccc, #ff6666);
+    background: linear-gradient(135deg, #302638, #3e284a); /* Dark Mauve gradient */
+    border-left: 8px solid #cc4499; /* Bright Mauve/Pink bar */
 }
+
+/* Pending: Deep Teal for standard action items */
 .pending {
-    background: linear-gradient(135deg, #ccf2ff, #66c2ff);
+    background: linear-gradient(135deg, #243635, #2c4240); /* Deep Teal gradient */
+    border-left: 8px solid #009688; /* Strong Teal bar */
 }
+
+/* --- 4. CONTENT TYPOGRAPHY --- */
+
+.card h4 {
+    color: #ffffff; /* White title for contrast */
+    font-size: 1.5em;
+    margin-top: 0;
+    margin-bottom: 15px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #444444; /* Darker separator line */
+}
+.card p {
+    color: #cccccc; /* Light gray body text */
+    font-size: 0.95em;
+    line-height: 1.8;
+    margin-bottom: 5px;
+}
+.card p b {
+    color: #eeeeee; /* Brighter label text */
+    display: inline-block;
+    min-width: 120px; 
+    font-weight: 600;
+}
+
+/* --- 5. BUTTON INTEGRATION (The Fix for Visual Placement) --- */
+
+/* Targets the Streamlit button element within the card area */
+/* This selector is complex but necessary for Streamlit specificity */
+.card + div > div > div > button {
+    /* Button appearance */
+    background-color: #0FB5A8; 
+    color: white;
+    font-weight: bold;
+    border-radius: 8px;
+    padding: 10px 15px;
+    width: 100%; /* Make button span the width of the card interior */
+}
+
+/* Remove surrounding margins that push the button outside */
+.card + div {
+    /* Adjusts the space between the card's closing DIV and the button's container */
+    margin-top: -15px !important; 
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+/* Ensure button text is readable */
+.card + div > div > div > button p {
+    color: white !important;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
