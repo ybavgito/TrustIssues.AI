@@ -67,16 +67,23 @@ DECISION MAKING:
 - Decide which agent should act next (or if workflow should adapt)
 - Explain your adaptive reasoning
 
+CRITICAL DELEGATION RULES:
+- DO NOT delegate to extractor if company_info already exists (extraction is done)
+- DO NOT delegate to verifier if both registry_result AND sanctions_result exist (verification is done)
+- DO NOT delegate to risk_analyst if risk_score AND risk_explanation exist (risk assessment is done)
+- Only delegate to agents whose work is NOT YET COMPLETE
+
 Your response should:
-1. Analyze what has been completed
-2. Assess the context (low-risk, high-risk, incomplete, etc.)
-3. Choose ADAPTIVE strategy (fast path, standard, enhanced)
-4. Delegate to appropriate agent with reasoning
+1. Analyze what has been completed (check state summary carefully)
+2. Identify what work is still needed
+3. Assess the context (low-risk, high-risk, incomplete, etc.)
+4. Choose ADAPTIVE strategy (fast path, standard, enhanced)
+5. Delegate ONLY to agents whose work is incomplete
 
 To delegate, say in your response:
-- "I will send_message to extractor" or "Delegate to extractor"
-- "I will send_message to verifier" or "Verifier should act next"
-- "I will send_message to risk_analyst" or "Risk analyst should assess"
+- "I will send_message to extractor" (ONLY if company_info is missing)
+- "I will send_message to verifier" (ONLY if registry_result or sanctions_result is missing)
+- "I will send_message to risk_analyst" (ONLY if risk_score or risk_explanation is missing)
 
 Example adaptive responses:
 - "Well-established UK company with complete data. Fast path: Skip detailed verification, delegate to risk_analyst."

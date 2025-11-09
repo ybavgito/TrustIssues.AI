@@ -103,17 +103,79 @@ with st.sidebar:
         st.switch_page("pages/approvals.py")
         st.rerun()
 
-# Compact header
-st.markdown("""
-<div style="padding: 8px 0; margin-bottom: 8px;">
-    <h2 style="margin: 0; font-size: 20px;">🤖 Live Agent Visualization</h2>
-</div>
-""", unsafe_allow_html=True)
+# Header with prominent back navigation
+col_back, col_title = st.columns([1, 6])
+with col_back:
+    if st.button("⬅️ Back", key="header_back", use_container_width=True, type="secondary"):
+        # Navigate back based on where user came from
+        if 'current_submission_id' in st.session_state:
+            st.switch_page("pages/approvals.py")
+        else:
+            st.switch_page("pages/admin_dashboard.py")
+        st.rerun()
+with col_title:
+    st.markdown("""
+    <div style="padding: 8px 0; margin-bottom: 8px;">
+        <h2 style="margin: 0; font-size: 20px;">🤖 Live Agent Visualization</h2>
+    </div>
+    """, unsafe_allow_html=True)
+
+# CRITICAL: Check if decision was just made (before checking process_pdf_path)
+# This prevents restarting agent when approve/reject is clicked
+if 'decision_just_made' in st.session_state:
+    # A decision was just made, transition to session viewer
+    session_id = st.session_state.get('decision_session_id')
+    if session_id:
+        st.session_state['selected_session_id'] = session_id
+    # Clean up all processing state
+    for key in ['process_pdf_path', 'processing_started', 'agent_thread', 'start_time', 'processing_complete', 'agent_session_id', 'decision_just_made', 'decision_session_id']:
+        if key in st.session_state:
+            del st.session_state[key]
+    st.rerun()
+    st.stop()
 
 # Check if we need to start processing
 if 'process_pdf_path' in st.session_state:
     pdf_path = st.session_state['process_pdf_path']
     submission_id = st.session_state.get('current_submission_id')
+    
+    # CRITICAL: Check if we have a session ID and if that session already has a decision
+    # This catches the case where approve/reject was just clicked
+    session_id_to_check = st.session_state.get('agent_session_id') or st.session_state.get('decision_session_id')
+    if session_id_to_check:
+        try:
+            existing_state = state_manager.load_state(session_id_to_check)
+            if existing_state and existing_state.human_decision:
+                # Decision already made, transition to session viewer immediately
+                st.session_state['selected_session_id'] = existing_state.session_id
+                for key in ['process_pdf_path', 'processing_started', 'agent_thread', 'start_time', 'processing_complete', 'agent_session_id', 'decision_session_id']:
+                    if key in st.session_state:
+                        del st.session_state[key]
+                st.rerun()
+                st.stop()
+        except:
+            pass  # If state doesn't exist yet, continue
+    
+    # Early exit: Check ALL state files to see if this PDF already has a decision
+    # This prevents restarting agent if user clicked approve/reject
+    state_dir = Path("state")
+    if state_dir.exists():
+        for session_file in state_dir.glob("*.json"):
+            try:
+                existing_state = state_manager.load_state(session_file.stem)
+                # Check if this is the same PDF and already has a decision
+                if (existing_state and 
+                    existing_state.pdf_path == pdf_path and 
+                    existing_state.human_decision):
+                    # Decision already made for this PDF, skip processing block
+                    st.session_state['selected_session_id'] = existing_state.session_id
+                    for key in ['process_pdf_path', 'processing_started', 'agent_thread', 'start_time', 'processing_complete', 'agent_session_id']:
+                        if key in st.session_state:
+                            del st.session_state[key]
+                    st.rerun()
+                    st.stop()
+            except:
+                continue  # Skip invalid state files
     
     # Professional header for live processing
     st.markdown("""
@@ -139,36 +201,90 @@ if 'process_pdf_path' in st.session_state:
     
     # Initialize tracking
     if 'processing_started' not in st.session_state:
+        # Guard: Check if a decision was already made for this PDF
+        # Look for existing sessions with this PDF path that have a decision
+        state_dir = Path("state")
+        if state_dir.exists():
+            for session_file in state_dir.glob("*.json"):
+                try:
+                    existing_state = state_manager.load_state(session_file.stem)
+                    if (existing_state and 
+                        existing_state.pdf_path == pdf_path and 
+                        existing_state.human_decision):
+                        # Decision already exists, don't start new processing
+                        st.session_state['selected_session_id'] = existing_state.session_id
+                        for key in ['process_pdf_path', 'processing_started', 'agent_thread', 'start_time', 'processing_complete']:
+                            if key in st.session_state:
+                                del st.session_state[key]
+                        st.rerun()
+                        st.stop()
+                except:
+                    continue
+        
         st.session_state['processing_started'] = True
         st.session_state['agent_session_id'] = None
+        st.session_state['thread_error'] = None
+        st.session_state['start_time'] = time.time()
         
         # Start processing in background thread
         def run_agent():
-            from src.agent import RiskLensAgent
-            from src.state_manager import StateManager
-            
-            state_manager = StateManager()
-            agent = RiskLensAgent(state_manager)
-            state = agent.run(pdf_path)
-            
-            # Update database
-            db.update_after_processing(
-                pdf_path,
-                state.session_id,
-                state.company_info.company_name if state.company_info else None,
-                state.risk_score.total_score if state.risk_score else None,
-                state.risk_score.risk_level if state.risk_score else None
-            )
-            
-            st.session_state['agent_session_id'] = state.session_id
-            st.session_state['processing_complete'] = True
+            try:
+                from src.agent import RiskLensAgent
+                from src.state_manager import StateManager
+                
+                state_manager = StateManager()
+                agent = RiskLensAgent(state_manager)
+                state = agent.run(pdf_path)
+                
+                # Update database
+                db.update_after_processing(
+                    pdf_path,
+                    state.session_id,
+                    state.company_info.company_name if state.company_info else None,
+                    state.risk_score.total_score if state.risk_score else None,
+                    state.risk_score.risk_level if state.risk_score else None
+                )
+                
+                # Don't access st.session_state from thread - causes ScriptRunContext warnings
+                # Main thread will detect session via file system polling
+                
+            except Exception as e:
+                import traceback
+                # Store error in a file instead of session_state
+                error_file = Path("state") / "error.txt"
+                with open(error_file, 'w') as f:
+                    f.write(f"ERROR: {str(e)}\n\nTRACEBACK:\n{traceback.format_exc()}")
         
         thread = threading.Thread(target=run_agent, daemon=True)
         thread.start()
         st.session_state['agent_thread'] = thread
     
+    # Check for errors (now stored in file)
+    error_file = Path("state") / "error.txt"
+    if error_file.exists():
+        with open(error_file, 'r') as f:
+            error_content = f.read()
+        
+        error_lines = error_content.split('\n')
+        error_msg = error_lines[0].replace('ERROR: ', '') if error_lines else 'Unknown error'
+        traceback_text = '\n'.join(error_lines[2:]) if len(error_lines) > 2 else 'No traceback available'
+        
+        status_box.error(f"❌ Error: {error_msg}")
+        with st.expander("Show Details"):
+            st.code(traceback_text)
+        if st.button("⬅️ Back to Approvals"):
+            # Clean up error file
+            error_file.unlink()
+            for key in ['process_pdf_path', 'processing_started', 'thread_error', 'agent_thread', 'start_time']:
+                if key in st.session_state:
+                    del st.session_state[key]
+            st.switch_page("pages/approvals.py")
+        st.stop()
+    
     # Poll for state file updates
     state_dir = Path("state")
+    elapsed = time.time() - st.session_state.get('start_time', time.time())
+    
     if state_dir.exists():
         sessions = sorted(
             state_dir.glob("*.json"),
@@ -177,9 +293,56 @@ if 'process_pdf_path' in st.session_state:
         )
         
         if sessions:
-            # Get the most recent session (likely ours)
-            latest_session = sessions[0].stem
-            state = state_manager.load_state(latest_session)
+            # If agent has finished and set session ID, use that
+            if st.session_state.get('agent_session_id'):
+                latest_session = st.session_state['agent_session_id']
+                status_box.success(f"✅ Session: {latest_session[:12]}...")
+            else:
+                # Look for newest session created after we started
+                start_time = st.session_state.get('start_time', time.time())
+                recent_session = None
+                
+                for session_file in sessions:
+                    file_mtime = session_file.stat().st_mtime
+                    if file_mtime >= start_time - 2:  # Created around when we started (2s buffer)
+                        recent_session = session_file.stem
+                        break
+                
+                if recent_session:
+                    latest_session = recent_session
+                    # Once we find the session, track it in session_state
+                    st.session_state['agent_session_id'] = recent_session
+                    status_box.info(f"🔄 Processing session: {latest_session[:12]}...")
+                else:
+                    # IMPORTANT: Don't show old session data when starting fresh processing
+                    # Just wait for the new session to be created
+                    if elapsed > 30:
+                        status_box.error(f"⚠️ Session creation taking longer than expected ({int(elapsed)}s)")
+                    else:
+                        status_box.info(f"⏳ Initializing AI agents... ({int(elapsed)}s)")
+                    time.sleep(2)
+                    st.rerun()
+                    latest_session = None
+            
+            if latest_session:
+                try:
+                    state = state_manager.load_state(latest_session)
+                    # Critical check: If decision already made, exit processing block immediately
+                    if state and state.human_decision:
+                        # Decision exists, transition to session viewer
+                        st.session_state['selected_session_id'] = latest_session
+                        for key in ['process_pdf_path', 'processing_started', 'agent_thread', 'start_time', 'processing_complete', 'agent_session_id']:
+                            if key in st.session_state:
+                                del st.session_state[key]
+                        st.rerun()
+                        st.stop()
+                except Exception as e:
+                    status_box.warning(f"⏳ Loading session data... ({int(elapsed)}s)")
+                    time.sleep(2)
+                    st.rerun()
+                    state = None
+            else:
+                state = None
             
             if state:
                 # Compact single-page layout - no scrolling
@@ -215,7 +378,9 @@ if 'process_pdf_path' in st.session_state:
                         """, unsafe_allow_html=True)
 
                 with metrics_col1:
-                    st.metric("Steps", len(state.agent_decisions) if state.agent_decisions else 0)
+                    completed = len([s for s in state.completed_steps if s])
+                    total_actions = len(state.agent_decisions) if state.agent_decisions else 0
+                    st.metric("Actions", total_actions, delta=f"{completed} tools used")
                 with metrics_col2:
                     if state.company_info:
                         st.metric("Company", state.company_info.company_name[:15] + "..." if len(state.company_info.company_name) > 15 else state.company_info.company_name)
@@ -235,13 +400,83 @@ if 'process_pdf_path' in st.session_state:
                         status_delta = "🔄 Active"
                     st.metric("Status", status, delta=status_delta)
                 
+                # PROMINENT ALERT when human review is needed - BEFORE tabs
+                if state.requires_human_review and not state.human_decision:
+                    st.markdown("""
+                    <div style="background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); padding: 20px; border-radius: 10px; margin: 15px 0; box-shadow: 0 4px 6px rgba(0,0,0,0.2); animation: pulse 2s infinite;">
+                        <h3 style="color: white; margin: 0 0 8px 0; font-size: 18px;">⚠️ ACTION REQUIRED: Human Review Needed</h3>
+                        <p style="color: rgba(255,255,255,0.95); margin: 0; font-size: 14px;">✅ AI analysis finished! Scroll down to review findings and approve/reject.</p>
+                    </div>
+                    <style>
+                    @keyframes pulse {
+                        0%, 100% { opacity: 1; }
+                        50% { opacity: 0.9; }
+                    }
+                    </style>
+                    """, unsafe_allow_html=True)
+                
                 # Main content in tabs for compactness
                 tab1, tab2, tab3, tab4 = st.tabs(["📋 Activity", "✅ Results", "💬 Messages", "📊 Details"])
                 
                 with tab1:
-                    # Compact activity timeline
+                    # Clear activity timeline showing what's happening
+                    st.markdown("### 🔄 Current Workflow Progress")
+                    
+                    # IMPORTANT: Show human review request prominently at the top
+                    if state.requires_human_review and not state.human_decision:
+                        st.markdown("""
+                        <div style="background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
+                            <h3 style="color: white; margin: 0 0 8px 0; font-size: 18px;">⏸️ WORKFLOW PAUSED - Human Review Required</h3>
+                            <p style="color: rgba(255,255,255,0.95); margin: 0; font-size: 14px;">✅ AI processing finished! Check the <strong>Results</strong> tab to review findings and make your decision.</p>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
+                    # Show completed steps first
+                    if state.completed_steps:
+                        st.markdown("**✅ Completed:**")
+                        step_icons = {
+                            'extract_from_pdf': '📄 Extracted company data from PDF',
+                            'search_registry': '🔍 Verified company in business registry',
+                            'check_sanctions': '🚨 Checked sanctions lists',
+                            'compute_risk': '📊 Calculated risk score',
+                            'explain_risk': '🧠 Generated AI risk explanation'
+                        }
+                        for step in state.completed_steps:
+                            st.markdown(f"- {step_icons.get(step, step.replace('_', ' ').title())}")
+                        
+                        # Show when workflow handed over to human
+                        if state.requires_human_review:
+                            st.markdown("- ⏸️ **Workflow paused → Awaiting human review**")
+                        
+                        st.markdown("---")
+                    
+                    # Show what's currently happening
+                    if state.requires_human_review and not state.human_decision:
+                        # Show which agent completed before pausing
+                        if state.current_agent:
+                            agent_names = {
+                                'extractor': 'Extractor',
+                                'verifier': 'Verifier', 
+                                'risk_analyst': 'Risk Analyst'
+                            }
+                            agent_name = agent_names.get(state.current_agent, state.current_agent)
+                            st.warning(f"**Last Active:** {agent_name} → ⏸️ **Paused for Human Review**")
+                        else:
+                            st.warning(f"**Currently Active:** 👤 Human reviewer (awaiting decision)")
+                    elif state.current_agent:
+                        agent_status = {
+                            'extractor': '📄 Extracting company information from PDF...',
+                            'verifier': '🔍 Verifying company details and checking sanctions...',
+                            'risk_analyst': '📊 Analyzing risk factors and computing scores...'
+                        }
+                        st.info(f"**Currently Active:** {agent_status.get(state.current_agent, f'{state.current_agent} is working...')}")
+                    
+                    # Show recent agent reasoning (last 3 decisions)
                     if state.agent_decisions:
-                        for i, decision in enumerate(state.agent_decisions[-3:], 1):  # Show last 3 only
+                        st.markdown("**📋 Recent Agent Actions:**")
+                        recent_decisions = list(reversed(state.agent_decisions[-3:]))  # Show newest first
+                        
+                        for i, decision in enumerate(recent_decisions):
                             agent_colors = {
                                 'coordinator': '#2563eb',
                                 'extractor': '#10b981', 
@@ -250,16 +485,49 @@ if 'process_pdf_path' in st.session_state:
                             }
                             agent_color = agent_colors.get(decision.agent_id, '#6366f1')
                             
-                            with st.expander(f"Step {len(state.agent_decisions) - 3 + i}: {decision.agent_id.upper().replace('_', ' ')}", expanded=False):
-                                reasoning_text = decision.reasoning[:200] + "..." if len(decision.reasoning) > 200 else decision.reasoning
+                            # Create agent emoji mapping
+                            agent_emoji = {
+                                'coordinator': '🎯',
+                                'extractor': '📄',
+                                'verifier': '🔍',
+                                'risk_analyst': '📊'
+                            }
+                            emoji = agent_emoji.get(decision.agent_id, '🤖')
+                            
+                            # Show what tools were used
+                            tools_used = ""
+                            if decision.tool_calls:
+                                tool_names = []
+                                for tool in decision.tool_calls:
+                                    if isinstance(tool, dict):
+                                        fn = tool.get('function', '')
+                                        if fn == 'extract_from_pdf':
+                                            tool_names.append('PDF Extraction')
+                                        elif fn == 'search_registry':
+                                            tool_names.append('Registry Search')
+                                        elif fn == 'check_sanctions':
+                                            tool_names.append('Sanctions Check')
+                                        elif fn == 'compute_risk':
+                                            tool_names.append('Risk Calculation')
+                                        elif fn == 'explain_risk':
+                                            tool_names.append('Risk Explanation')
+                                        else:
+                                            tool_names.append(fn.replace('_', ' ').title())
+                                if tool_names:
+                                    tools_used = f" → Used: {', '.join(tool_names)}"
+                            
+                            agent_name = decision.agent_id.replace('_', ' ').title()
+                            
+                            with st.expander(f"{emoji} {agent_name}{tools_used}", expanded=(i==0)):
+                                reasoning_text = decision.reasoning[:300] + "..." if len(decision.reasoning) > 300 else decision.reasoning
                                 st.markdown(f"""
-                                <div style="background: #f9fafb; padding: 10px; border-left: 3px solid {agent_color}; border-radius: 4px; font-size: 12px; line-height: 1.5;">
+                                <div style="background: #f9fafb; padding: 12px; border-left: 3px solid {agent_color}; border-radius: 4px; font-size: 13px; line-height: 1.6;">
                                     {reasoning_text.replace(chr(10), '<br>')}
                                 </div>
                                 """, unsafe_allow_html=True)
-                                if decision.tool_calls:
-                                    tools = [tool.get('function', 'unknown').replace('_', ' ').title() if isinstance(tool, dict) else str(tool).replace('_', ' ').title() for tool in decision.tool_calls]
-                                    st.caption(f"🔧 Tools: {', '.join(tools)}")
+                    
+                    if not state.agent_decisions and not state.completed_steps:
+                        st.info("⏳ Workflow is starting...")
                 
                 with tab2:
                     # Show prominent message when processing completes
@@ -366,25 +634,51 @@ if 'process_pdf_path' in st.session_state:
                     with detail_col2:
                         if state.risk_explanation:
                             st.markdown("**Risk Explanation:**")
-                            st.text(state.risk_explanation.explanation[:300] + "..." if len(state.risk_explanation.explanation) > 300 else state.risk_explanation.explanation)
+                            # Display summary (main explanation)
+                            summary_text = state.risk_explanation.summary[:300] + "..." if len(state.risk_explanation.summary) > 300 else state.risk_explanation.summary
+                            st.text(summary_text)
+                            
+                            # Show key factors if available
+                            if state.risk_explanation.key_factors:
+                                st.markdown("**Key Factors:**")
+                                for factor in state.risk_explanation.key_factors[:3]:  # Show first 3
+                                    st.text(f"• {factor}")
+                            
+                            # Show recommendation if available
+                            if state.risk_explanation.recommendation:
+                                st.markdown("**Recommendation:**")
+                                rec_text = state.risk_explanation.recommendation[:200] + "..." if len(state.risk_explanation.recommendation) > 200 else state.risk_explanation.recommendation
+                                st.text(rec_text)
                 
-                # Human Review Section - Prominent at bottom
+                # Human Review Section - OUTSIDE tabs, always visible at bottom
                 if state.requires_human_review and not state.human_decision:
                     st.markdown("---")
                     # Make human review section very prominent
                     st.markdown("""
                     <div style="background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); padding: 25px; border-radius: 10px; margin: 20px 0; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
                         <h2 style="color: white; margin: 0 0 10px 0;">⚠️ Human Review Required</h2>
-                        <p style="color: rgba(255,255,255,0.95); margin: 0; font-size: 16px;">AI processing is complete. Your decision is required to proceed.</p>
+                        <p style="color: rgba(255,255,255,0.95); margin: 0; font-size: 16px;">Your decision is required to proceed.</p>
                     </div>
                     """, unsafe_allow_html=True)
                     
                     if state.review_reason:
-                        st.markdown(f"""
-                        <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
-                            <strong>Review Reason:</strong> {state.review_reason}
-                        </div>
-                        """, unsafe_allow_html=True)
+                        # Clean up review reason text to remove redundant "complete" phrase
+                        review_text = state.review_reason
+                        # Remove "complete - " pattern (e.g., "Risk assessment complete - human approval required" -> "human approval required")
+                        if "complete - " in review_text.lower():
+                            parts = review_text.split("complete - ", 1)
+                            review_text = parts[1].strip() if len(parts) > 1 else review_text
+                        elif " - " in review_text and "complete" in review_text.lower():
+                            # Handle other patterns like "something complete - something"
+                            parts = review_text.split(" - ", 1)
+                            if "complete" in parts[0].lower():
+                                review_text = parts[1].strip() if len(parts) > 1 else review_text
+                        if review_text:
+                            st.markdown(f"""
+                            <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+                                <strong>Review Reason:</strong> {review_text}
+                            </div>
+                            """, unsafe_allow_html=True)
                     
                     # Review decision buttons
                     review_col1, review_col2, review_col3, review_col4 = st.columns([1, 1, 1, 3])
@@ -395,11 +689,7 @@ if 'process_pdf_path' in st.session_state:
                             state.human_decision = "approved"
                             state_manager.save_state(state)
                             
-                            # Continue processing - generate access recommendation
-                            from src.agent import RiskLensAgent
-                            agent = RiskLensAgent(state_manager)
-                            
-                            # Resume workflow to generate access recommendation
+                            # Generate access recommendation directly (no need for agent instance)
                             if state.risk_score and not state.access_recommendation:
                                 from src.tools.access_recommender import AccessRecommender
                                 access_recommender = AccessRecommender()
@@ -418,8 +708,18 @@ if 'process_pdf_path' in st.session_state:
                             if 'current_submission_id' in st.session_state:
                                 db.mark_submission_status(st.session_state['current_submission_id'], 'approved')
                             
+                            # Set flag to prevent restart on rerun
+                            st.session_state['decision_just_made'] = True
+                            st.session_state['decision_session_id'] = state.session_id
+                            st.session_state['agent_session_id'] = state.session_id  # Also set this for early exit check
+                            
+                            # Clean up processing state before rerun (but keep agent_session_id for now)
+                            st.session_state['selected_session_id'] = state.session_id
+                            for key in ['process_pdf_path', 'processing_started', 'agent_thread', 'start_time', 'processing_complete']:
+                                if key in st.session_state:
+                                    del st.session_state[key]
+                            
                             st.success("✅ Approved! Generating access recommendation...")
-                            st.balloons()
                             st.rerun()
                     
                     with review_col2:
@@ -432,6 +732,17 @@ if 'process_pdf_path' in st.session_state:
                             if 'current_submission_id' in st.session_state:
                                 db.mark_submission_status(st.session_state['current_submission_id'], 'rejected')
                             
+                            # Set flag to prevent restart on rerun
+                            st.session_state['decision_just_made'] = True
+                            st.session_state['decision_session_id'] = state.session_id
+                            st.session_state['agent_session_id'] = state.session_id  # Also set this for early exit check
+                            
+                            # Clean up processing state before rerun (but keep agent_session_id for now)
+                            st.session_state['selected_session_id'] = state.session_id
+                            for key in ['process_pdf_path', 'processing_started', 'agent_thread', 'start_time', 'processing_complete']:
+                                if key in st.session_state:
+                                    del st.session_state[key]
+                            
                             st.warning("❌ Rejected")
                             st.rerun()
                     
@@ -440,6 +751,18 @@ if 'process_pdf_path' in st.session_state:
                             state.human_decision = "request_more_info"
                             state.workflow_complete = True
                             state_manager.save_state(state)
+                            
+                            # Set flag to prevent restart on rerun
+                            st.session_state['decision_just_made'] = True
+                            st.session_state['decision_session_id'] = state.session_id
+                            st.session_state['agent_session_id'] = state.session_id  # Also set this for early exit check
+                            
+                            # Clean up processing state before rerun (but keep agent_session_id for now)
+                            st.session_state['selected_session_id'] = state.session_id
+                            for key in ['process_pdf_path', 'processing_started', 'agent_thread', 'start_time', 'processing_complete']:
+                                if key in st.session_state:
+                                    del st.session_state[key]
+                            
                             st.info("📋 More information requested")
                             st.rerun()
                     
@@ -491,7 +814,7 @@ if 'process_pdf_path' in st.session_state:
                         st.rerun()
                     else:
                         # AI processing done, awaiting human review
-                        status_box.warning("⏸️ AI Processing Complete - Awaiting Human Review")
+                        status_box.success("✅ AI Processing Complete - Review Required Below ⬇️")
                         # Clean up processing state but keep session selected
                         st.session_state['selected_session_id'] = latest_session
                         if 'processing_started' in st.session_state:
@@ -500,11 +823,17 @@ if 'process_pdf_path' in st.session_state:
                             del st.session_state['agent_thread']
                         if 'processing_complete' in st.session_state:
                             del st.session_state['processing_complete']
-                        if 'process_pdf_path' in st.session_state:
-                            del st.session_state['process_pdf_path']
-                        # Don't auto-refresh when awaiting review - let user interact
-                        time.sleep(3)
-                        st.rerun()
+                        # IMPORTANT: Don't delete 'process_pdf_path' yet - we need to stay in this block
+                        # to show the human review UI. Only delete it after human makes a decision.
+                        
+                        # Reload state to ensure we have the latest (with human review flag)
+                        try:
+                            state = state_manager.load_state(latest_session)
+                        except:
+                            pass  # Use existing state if reload fails
+                        
+                        # Stop auto-refresh - human review UI is now visible
+                        st.stop()
                 else:
                     # Still processing
                     status_box.info("🔄 Processing... Auto-refreshing every 2 seconds")
@@ -512,8 +841,17 @@ if 'process_pdf_path' in st.session_state:
                     st.rerun()
     
     # Fallback status
+    elapsed = time.time() - st.session_state.get('start_time', time.time())
     if not state_dir.exists() or not sessions:
-        status_box.warning("⏳ Initializing agents... Please wait")
+        if elapsed > 30:
+            status_box.error(f"⚠️ Still waiting after {int(elapsed)}s. There may be an issue.")
+            if st.button("⬅️ Cancel and Return"):
+                for key in ['process_pdf_path', 'processing_started', 'agent_thread', 'start_time']:
+                    if key in st.session_state:
+                        del st.session_state[key]
+                st.switch_page("pages/approvals.py")
+        else:
+            status_box.info(f"⏳ Starting AI agents... ({int(elapsed)}s)")
         time.sleep(2)
         st.rerun()
 
@@ -692,23 +1030,36 @@ if 'selected_session_id' in st.session_state:
             else:
                 st.info("No timeline data yet")
         
-        # Human Review Section - Prominent
-        if state.requires_human_review and not state.human_decision:
+        # Human Review Section - Only show if NOT in live processing mode
+        # (Live processing block has its own human review section)
+        if state.requires_human_review and not state.human_decision and 'process_pdf_path' not in st.session_state:
             st.markdown("---")
             # Make human review section very prominent
             st.markdown("""
             <div style="background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); padding: 25px; border-radius: 10px; margin: 20px 0; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
                 <h2 style="color: white; margin: 0 0 10px 0;">⚠️ Human Review Required</h2>
-                <p style="color: rgba(255,255,255,0.95); margin: 0; font-size: 16px;">AI processing is complete. Your decision is required to proceed.</p>
+                <p style="color: rgba(255,255,255,0.95); margin: 0; font-size: 16px;">Your decision is required to proceed.</p>
             </div>
             """, unsafe_allow_html=True)
             
             if state.review_reason:
-                st.markdown(f"""
-                <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
-                    <strong>Review Reason:</strong> {state.review_reason}
-                </div>
-                """, unsafe_allow_html=True)
+                # Clean up review reason text to remove redundant "complete" phrase
+                review_text = state.review_reason
+                # Remove "complete - " pattern (e.g., "Risk assessment complete - human approval required" -> "human approval required")
+                if "complete - " in review_text.lower():
+                    parts = review_text.split("complete - ", 1)
+                    review_text = parts[1].strip() if len(parts) > 1 else review_text
+                elif " - " in review_text and "complete" in review_text.lower():
+                    # Handle other patterns like "something complete - something"
+                    parts = review_text.split(" - ", 1)
+                    if "complete" in parts[0].lower():
+                        review_text = parts[1].strip() if len(parts) > 1 else review_text
+                if review_text:
+                    st.markdown(f"""
+                    <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+                        <strong>Review Reason:</strong> {review_text}
+                    </div>
+                    """, unsafe_allow_html=True)
             
             # Review decision buttons
             review_col1, review_col2, review_col3, review_col4 = st.columns([1, 1, 1, 3])
@@ -719,11 +1070,7 @@ if 'selected_session_id' in st.session_state:
                     state.human_decision = "approved"
                     state_manager.save_state(state)
                     
-                    # Continue processing - generate access recommendation
-                    from src.agent import RiskLensAgent
-                    agent = RiskLensAgent(state_manager)
-                    
-                    # Resume workflow to generate access recommendation
+                    # Generate access recommendation directly (no need for agent instance)
                     if state.risk_score and not state.access_recommendation:
                         from src.tools.access_recommender import AccessRecommender
                         access_recommender = AccessRecommender()
@@ -742,8 +1089,11 @@ if 'selected_session_id' in st.session_state:
                     if 'current_submission_id' in st.session_state:
                         db.mark_submission_status(st.session_state['current_submission_id'], 'approved')
                     
+                    # Set flag to prevent restart on rerun
+                    st.session_state['decision_just_made'] = True
+                    st.session_state['decision_session_id'] = state.session_id
+                    
                     st.success("✅ Approved! Generating access recommendation...")
-                    st.balloons()
                     st.rerun()
             
             with review_col2:
@@ -756,6 +1106,10 @@ if 'selected_session_id' in st.session_state:
                     if 'current_submission_id' in st.session_state:
                         db.mark_submission_status(st.session_state['current_submission_id'], 'rejected')
                     
+                    # Set flag to prevent restart on rerun
+                    st.session_state['decision_just_made'] = True
+                    st.session_state['decision_session_id'] = state.session_id
+                    
                     st.warning("❌ Rejected")
                     st.rerun()
             
@@ -764,6 +1118,11 @@ if 'selected_session_id' in st.session_state:
                     state.human_decision = "request_more_info"
                     state.workflow_complete = True
                     state_manager.save_state(state)
+                    
+                    # Set flag to prevent restart on rerun
+                    st.session_state['decision_just_made'] = True
+                    st.session_state['decision_session_id'] = state.session_id
+                    
                     st.info("📋 More information requested")
                     st.rerun()
             

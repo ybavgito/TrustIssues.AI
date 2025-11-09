@@ -64,7 +64,7 @@ class RiskCalculator:
             flags = flags or {}
             
             # CRITICAL: Sanctions match = automatic HIGH risk (non-negotiable)
-            if sanctions_result.match:
+            if sanctions_result and sanctions_result.match:
                 return self._handle_sanctions_match(sanctions_result)
             
             # Use AI-powered risk assessment if available
@@ -278,10 +278,10 @@ HIGH-RISK INDICATORS (for this industry):
 {chr(10).join(f"  • {indicator}" for indicator in industry_profile.high_risk_indicators[:5])}
 
 VERIFICATION RESULTS:
-- Registry Match: {'YES' if registry_result.match else 'NO'}
-- Registry Status: {registry_result.status or 'Unknown'}
-- Registry Confidence: {registry_result.confidence:.0%}
-- Sanctions Check: {'CLEAR' if not sanctions_result.match else 'MATCH FOUND'}
+- Registry Match: {'YES' if registry_result and registry_result.match else 'NO' if registry_result else 'NOT CHECKED'}
+- Registry Status: {registry_result.status if registry_result else 'Unknown'}
+- Registry Confidence: {registry_result.confidence:.0% if registry_result and registry_result.confidence else 'N/A'}
+- Sanctions Check: {'CLEAR' if sanctions_result and not sanctions_result.match else 'MATCH FOUND' if sanctions_result and sanctions_result.match else 'NOT CHECKED'}
 
 INDUSTRY BENCHMARK COMPARISON:
 - Industry Avg Risk Score: {industry_benchmark.get('avg_risk_score', 'N/A')}
@@ -328,10 +328,10 @@ ADDITIONAL FLAGS:
 - Address: {company_info.address or 'Not provided'}
 
 VERIFICATION RESULTS:
-- Registry Match: {'YES' if registry_result.match else 'NO'}
-- Registry Status: {registry_result.status or 'Unknown'}
-- Registry Confidence: {registry_result.confidence:.0%}
-- Sanctions Check: {'CLEAR' if not sanctions_result.match else 'MATCH FOUND'}
+- Registry Match: {'YES' if registry_result and registry_result.match else 'NO' if registry_result else 'NOT CHECKED'}
+- Registry Status: {registry_result.status if registry_result else 'Unknown'}
+- Registry Confidence: {registry_result.confidence:.0% if registry_result and registry_result.confidence else 'N/A'}
+- Sanctions Check: {'CLEAR' if sanctions_result and not sanctions_result.match else 'MATCH FOUND' if sanctions_result and sanctions_result.match else 'NOT CHECKED'}
 
 DATA QUALITY:
 - Complete Registration: {'Yes' if company_info.registration_number else 'No'}
@@ -357,26 +357,28 @@ ADDITIONAL FLAGS:
         score_flags = []
         
         # Registry match
-        if registry_result.match:
+        if registry_result and registry_result.match:
             score += self.fallback_rules['registry_match']
             breakdown['registry_match'] = self.fallback_rules['registry_match']
             score_flags.append("✓ Company found in registry")
-        else:
+        elif registry_result:
             score_flags.append("✗ Company NOT found in registry (major risk)")
+        else:
+            score_flags.append("⚠ Registry check not performed")
         
         # Registry status
-        if registry_result.status == 'active':
+        if registry_result and registry_result.status == 'active':
             score += self.fallback_rules['registry_active']
             breakdown['registry_active'] = self.fallback_rules['registry_active']
             score_flags.append("✓ Company status: ACTIVE")
-        elif registry_result.status == 'dissolved':
+        elif registry_result and registry_result.status == 'dissolved':
             score_flags.append("✗ Company status: DISSOLVED")
-        elif registry_result.status == 'inactive':
+        elif registry_result and registry_result.status == 'inactive':
             score_flags.append("⚠ Company status: INACTIVE")
         
         # Incorporation age
-        if company_info.incorporation_date or registry_result.incorporation_date:
-            inc_date_str = company_info.incorporation_date or registry_result.incorporation_date
+        if company_info.incorporation_date or (registry_result and registry_result.incorporation_date):
+            inc_date_str = company_info.incorporation_date or (registry_result.incorporation_date if registry_result else None)
             try:
                 inc_date = parser.parse(inc_date_str)
                 age_years = (datetime.now() - inc_date).days / 365.25

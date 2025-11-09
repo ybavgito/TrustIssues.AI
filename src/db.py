@@ -206,6 +206,13 @@ def get_recent_submissions(limit: int = 6, submitted_by: Optional[str] = None) -
         return [dict(row) for row in cur.fetchall()]
 
 
+def clear_all_submissions() -> None:
+    """Delete all submissions from the database, keeping only the table structure."""
+    with _get_connection() as conn:
+        conn.execute("DELETE FROM submissions")
+        conn.commit()
+
+
 # Initialize database on import
 init_db()
 

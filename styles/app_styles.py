@@ -36,6 +36,22 @@ footer {{visibility: hidden;}}
     background-color: {COLORS['background']} !important;
 }}
 
+/* Fix all container backgrounds - NO BLACK! */
+div[data-testid="stVerticalBlock"],
+div[data-testid="stHorizontalBlock"],
+.element-container,
+[data-testid="stExpander"],
+.stContainer,
+section[data-testid="stSidebar"],
+.st-emotion-cache-1y4p8pa {{
+    background-color: transparent !important;
+}}
+
+/* Ensure expanders have white background */
+[data-testid="stExpander"] > div {{
+    background-color: {COLORS['surface']} !important;
+}}
+
 /* Professional typography */
 h1, h2, h3, h4, h5, h6 {{
     color: {COLORS['text']} !important;
@@ -146,6 +162,44 @@ p, span, label, div, .stMarkdown {{
     border-radius: 8px;
 }}
 
+/* Fix file uploader button visibility - all possible selectors */
+[data-testid="stFileUploader"] button,
+.stFileUploader button,
+.stFileUploader section button,
+button[kind="secondary"] {{
+    background-color: {COLORS['primary']} !important;
+    color: white !important;
+    border: 1px solid {COLORS['primary']} !important;
+    padding: 8px 16px !important;
+    border-radius: 6px !important;
+    font-weight: 500 !important;
+}}
+
+[data-testid="stFileUploader"] button:hover,
+.stFileUploader button:hover,
+.stFileUploader section button:hover {{
+    background-color: {COLORS['primary_dark']} !important;
+    border-color: {COLORS['primary_dark']} !important;
+}}
+
+/* Ensure text inside button is white */
+[data-testid="stFileUploader"] button span,
+.stFileUploader button span {{
+    color: white !important;
+}}
+
+/* File uploader drag area */
+.stFileUploader section > div {{
+    border: 2px dashed {COLORS['border']} !important;
+    border-radius: 8px !important;
+    background-color: {COLORS['surface']} !important;
+}}
+
+.stFileUploader section > div:hover {{
+    border-color: {COLORS['primary']} !important;
+    background-color: {COLORS['background']} !important;
+}}
+
 /* Metrics */
 .metric-card {{
     background: {COLORS['surface']};
@@ -207,6 +261,26 @@ p, span, label, div, .stMarkdown {{
     border: 1px solid {COLORS['border']};
 }}
 
+/* Fix expander header text visibility */
+.streamlit-expanderHeader p,
+.streamlit-expanderHeader div,
+.streamlit-expanderHeader span,
+[data-testid="stMarkdownContainer"] p,
+[data-testid="stExpander"] p,
+[data-testid="stExpander"] span,
+[data-testid="stExpander"] div {{
+    color: {COLORS['text']} !important;
+    background-color: transparent !important;
+}}
+
+/* Expander content area */
+.streamlit-expanderContent {{
+    background-color: {COLORS['surface']};
+    border: 1px solid {COLORS['border']};
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+}}
+
 /* Select box */
 .stSelectbox > div > div {{
     border-radius: 8px;
@@ -226,6 +300,22 @@ p, span, label, div, .stMarkdown {{
 .block-container {{
     padding-top: 2rem;
     padding-bottom: 2rem;
+}}
+
+/* Target specific Streamlit emotion-cache classes that cause black backgrounds */
+[class*="emotion-cache"] {{
+    background-color: transparent !important;
+}}
+
+/* Re-apply specific backgrounds where needed */
+.stApp,
+.main {{
+    background-color: {COLORS['background']} !important;
+}}
+
+.streamlit-expanderHeader,
+.streamlit-expanderContent {{
+    background-color: {COLORS['surface']} !important;
 }}
 </style>
 """

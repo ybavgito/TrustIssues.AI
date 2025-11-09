@@ -107,6 +107,23 @@ else:
                     risk_emoji = {'low': '🟢', 'medium': '🟡', 'high': '🔴'}.get(submission['risk_level'], '⚪')
                     st.write(f"**Risk Level:** {risk_emoji} {submission['risk_level'].upper()}")
                     st.write(f"**Risk Score:** {submission['risk_score']}/100")
+                    
+                    # Show recommended access level based on risk
+                    if submission['risk_level'] == 'low':
+                        access_rec = "🟢 Standard Access"
+                        access_color = "#10b981"
+                    elif submission['risk_level'] == 'medium':
+                        access_rec = "🟡 Read-Only Access"
+                        access_color = "#f59e0b"
+                    else:  # high
+                        access_rec = "🔴 Restricted Access"
+                        access_color = "#ef4444"
+                    
+                    st.markdown(f"""
+                    <div style="background: {access_color}15; border-left: 3px solid {access_color}; padding: 8px; border-radius: 4px; margin-top: 8px;">
+                        <small style="color: {access_color}; font-weight: 600;">💡 Recommended: {access_rec}</small>
+                    </div>
+                    """, unsafe_allow_html=True)
                 else:
                     st.write("**Risk:** Not processed yet")
             
@@ -128,8 +145,28 @@ else:
                         st.switch_page("pages/live_agent_visualization.py")
                         st.rerun()
             
-            # Approval/rejection buttons if processed
+            # Show detailed recommendation if available
             if submission['session_id'] and submission['status'] == 'pending_review':
+                # Try to load full state to show recommendation details
+                state_manager = StateManager()
+                try:
+                    state = state_manager.load_state(submission['session_id'])
+                    if state and state.access_recommendation:
+                        with st.expander("📋 View Full Access Recommendation"):
+                            rec = state.access_recommendation
+                            
+                            st.markdown(f"""
+                            <div style="background: #f0fdf4; border-left: 4px solid #10b981; padding: 15px; border-radius: 6px; margin-bottom: 10px;">
+                                <h4 style="margin: 0 0 10px 0; color: #065f46;">Recommended Access Level: {rec.access_level.upper().replace('_', ' ')}</h4>
+                                <p style="margin: 5px 0;"><strong>Permissions:</strong> {', '.join(rec.permissions)}</p>
+                                {f'<p style="margin: 5px 0;"><strong>Restrictions:</strong> {", ".join(rec.restrictions)}</p>' if rec.restrictions else ''}
+                                <p style="margin: 5px 0;"><strong>Justification:</strong> {rec.justification}</p>
+                            </div>
+                            """, unsafe_allow_html=True)
+                except:
+                    pass  # Session might not exist or be incomplete
+                
+                # Approval/rejection buttons
                 col_a, col_b, col_c = st.columns([1, 1, 4])
                 
                 with col_a:

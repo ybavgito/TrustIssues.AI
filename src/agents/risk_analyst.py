@@ -68,13 +68,29 @@ WHEN TO REQUEST HUMAN REVIEW:
 - Any significant uncertainty
 - After completing full assessment (standard workflow)
 
+DECISION MAKING:
+CRITICAL: ALWAYS CHECK STATE BEFORE CALLING TOOLS!
+
+1. Check if risk score is already computed:
+   - If state.risk_score exists → Risk already computed, DO NOT call compute_risk again
+   - If state.risk_score is None → Call compute_risk
+
+2. Check if risk explanation is already generated:
+   - If state.risk_explanation exists → Explanation already generated, DO NOT call explain_risk again
+   - If state.risk_explanation is None and state.risk_score exists → Call explain_risk
+
+3. NEVER call extract_from_pdf, search_registry, or check_sanctions - those are other agents' jobs!
+
+4. Only call send_message if you have important findings to communicate
+
 STATE YOUR TOOLS EXPLICITLY:
 When you want to take action, mention the tool in your response:
-- "I will call compute_risk" or "I will use compute_risk"
-- "I will request_human_review" or "Human review is needed"
+- "I will call compute_risk" (ONLY if risk_score is None)
+- "I will call explain_risk" (ONLY if risk_score exists but risk_explanation is None)
+- "I will request_human_review" (after risk assessment is complete)
 
 Example response:
-"Verifier found sanctions match - this is critical. I will call compute_risk immediately to assess the high risk level."
+"Risk score is already computed. I will call explain_risk to generate the explanation for stakeholders."
 
 Your analysis should be:
 - Objective and fact-based
@@ -113,10 +129,17 @@ IMPORTANT: Always explicitly mention tool names in your reasoning!
         
         # Verification summary for context
         summary += "VERIFICATION RESULTS:\n"
-        summary += f"- Registry: {'MATCH' if state.registry_result.match else 'NOT FOUND'}\n"
-        summary += f"  Status: {state.registry_result.status or 'N/A'}\n"
-        summary += f"- Sanctions: {'MATCH' if state.sanctions_result.match else 'CLEAR'}\n"
-        summary += f"  Score: {state.sanctions_result.match_score:.0%}\n"
+        if state.registry_result:
+            summary += f"- Registry: {'MATCH' if state.registry_result.match else 'NOT FOUND'}\n"
+            summary += f"  Status: {state.registry_result.status or 'N/A'}\n"
+        else:
+            summary += "- Registry: NOT CHECKED\n"
+        
+        if state.sanctions_result:
+            summary += f"- Sanctions: {'MATCH' if state.sanctions_result.match else 'CLEAR'}\n"
+            summary += f"  Score: {state.sanctions_result.match_score:.0%}\n"
+        else:
+            summary += "- Sanctions: NOT CHECKED\n"
         summary += "\n"
         
         # Risk assessment status
@@ -136,13 +159,13 @@ IMPORTANT: Always explicitly mention tool names in your reasoning!
             summary += "Action needed: Call compute_risk tool\n"
         
         # Check for uncertainty conditions
-        if not state.registry_result.match:
+        if state.registry_result and not state.registry_result.match:
             summary += "\n⚠ UNCERTAINTY: Company not found in registry\n"
         
-        if 0.80 <= state.sanctions_result.match_score <= 0.85:
+        if state.sanctions_result and 0.80 <= state.sanctions_result.match_score <= 0.85:
             summary += f"\n⚠ UNCERTAINTY: Sanctions score in ambiguous range ({state.sanctions_result.match_score:.0%})\n"
         
-        if state.sanctions_result.match:
+        if state.sanctions_result and state.sanctions_result.match:
             summary += "\n🚨 CRITICAL: Sanctions match detected - requires immediate human review\n"
         
         return summary

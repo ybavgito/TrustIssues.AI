@@ -88,13 +88,18 @@ class RiskLensAgent:
                     self.state_manager.save_state(state)
                 return state
         else:
-            session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+            # Generate unique session ID with microseconds to prevent collisions
+            import uuid
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            unique_id = str(uuid.uuid4())[:8]  # Short UUID suffix
+            session_id = f"{timestamp}_{unique_id}"
             state = AgentState(session_id=session_id, pdf_path=pdf_path)
             self._log("info", f"Starting new agentic session {session_id}")
         
         # Agentic Loop
         max_iterations = 20
         iteration = 0
+        last_3_agents = []  # Track last 3 agents to prevent looping
         
         while not state.workflow_complete and iteration < max_iterations:
             iteration += 1
@@ -108,6 +113,24 @@ class RiskLensAgent:
             if next_agent_id is None:
                 self._log("info", "Coordinator: Workflow complete or awaiting human review")
                 break
+            
+            # LOOP PREVENTION: Check if same agent called 3 times in a row
+            last_3_agents.append(next_agent_id)
+            if len(last_3_agents) > 3:
+                last_3_agents.pop(0)
+            
+            if len(last_3_agents) == 3 and len(set(last_3_agents)) == 1:
+                self._log("warning", f"⚠️ Agent {next_agent_id} called 3 times in a row - forcing workflow to continue")
+                # Force extraction as complete if extractor is looping
+                if next_agent_id == "extractor" and not state.company_info:
+                    self._log("warning", "Extractor stuck - moving forward with partial data")
+                    # Move to next phase anyway
+                    next_agent_id = "verifier"
+                    last_3_agents = [next_agent_id]  # Reset counter
+                elif next_agent_id == "verifier":
+                    # Move to risk analyst
+                    next_agent_id = "risk_analyst"
+                    last_3_agents = [next_agent_id]
             
             self._log("decide", f"Coordinator delegates to: {next_agent_id}")
             self._log("decide", f"Reasoning: {coordinator_reasoning[:150]}...")
@@ -130,23 +153,29 @@ class RiskLensAgent:
                 for tool_call in decision.tool_calls:
                     self._execute_tool_call(tool_call, state, next_agent_id)
             
+            # Save state after each agent action (before checking for human review)
+            self.state_manager.save_state(state)
+            
             # Check if agent requests human review
             if decision.requests_human_review:
                 state.requires_human_review = True
                 if not state.review_reason:
                     state.review_reason = decision.reasoning
                 self._log("info", "Agent requests human review")
+                # Save state with human review flag before breaking
+                self.state_manager.save_state(state)
                 break
             
             # Automatically require human review after risk assessment is complete
             if state.risk_score and state.risk_explanation and not state.requires_human_review:
                 state.requires_human_review = True
                 state.review_reason = "Risk assessment complete - human approval required"
+                # Keep current_agent set so frontend can show which agent completed
+                # Don't clear it - helps with visibility
                 self._log("info", "Risk assessment complete → requesting human review")
+                # Save state with human review flag before breaking
+                self.state_manager.save_state(state)
                 break
-            
-            # Save state after each agent action
-            self.state_manager.save_state(state)
             
             # Check if human review needed based on state
             if state.requires_human_review:
@@ -294,6 +323,27 @@ class RiskLensAgent:
         """Execute a tool call made by an agent"""
         function_name = tool_call["function"]
         arguments = tool_call["arguments"]
+        
+        # Safety check: Skip redundant tool calls
+        if function_name == "extract_from_pdf" and state.company_info:
+            self._log("warning", f"  ⚠️ Skipping {function_name} - already extracted: {state.company_info.company_name}")
+            return
+        
+        if function_name == "search_registry" and state.registry_result:
+            self._log("warning", f"  ⚠️ Skipping {function_name} - registry already checked")
+            return
+        
+        if function_name == "check_sanctions" and state.sanctions_result:
+            self._log("warning", f"  ⚠️ Skipping {function_name} - sanctions already checked")
+            return
+        
+        if function_name == "compute_risk" and state.risk_score:
+            self._log("warning", f"  ⚠️ Skipping {function_name} - risk already computed: {state.risk_score.total_score}")
+            return
+        
+        if function_name == "explain_risk" and state.risk_explanation:
+            self._log("warning", f"  ⚠️ Skipping {function_name} - explanation already generated")
+            return
         
         self._log("act", f"  Calling tool: {function_name}")
         

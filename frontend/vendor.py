@@ -78,7 +78,6 @@ if submitted:
             time.sleep(3)  # Simulate a processing delay
         
         st.success(f"Success! Document '{uploaded_file.name}' has been submitted.")
-        st.balloons()
     else:
         # Show an error if the form is incomplete
         st.error("Please select a submission type AND upload a PDF file to submit.")

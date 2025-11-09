@@ -15,6 +15,7 @@ if str(project_root) not in sys.path:
 
 from styles.app_styles import get_base_css, COLORS
 from src import db
+from src.state_manager import StateManager
 
 # Auth check
 if not st.session_state.get('logged_in') or st.session_state.get('role') != 'vendor':
@@ -69,27 +70,37 @@ with tab1:
             st.info(f"📄 **{uploaded_file.name}** ({len(uploaded_file.getvalue())/1024:.1f} KB)")
         with col_b:
             if st.button("🚀 Submit", type="primary", use_container_width=True):
+                import uuid
+                from datetime import datetime
+                
                 uploads_dir = Path("uploads")
                 uploads_dir.mkdir(exist_ok=True)
                 
-                save_path = uploads_dir / uploaded_file.name
+                # Create unique filename to prevent overwrites
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                unique_id = str(uuid.uuid4())[:8]
+                file_extension = Path(uploaded_file.name).suffix
+                file_stem = Path(uploaded_file.name).stem
+                unique_filename = f"{timestamp}_{unique_id}_{file_stem}{file_extension}"
+                
+                save_path = uploads_dir / unique_filename
                 with open(save_path, "wb") as f:
                     f.write(uploaded_file.getvalue())
 
                 submission_id = db.record_submission(
-                    uploaded_file.name,
-                    str(save_path),
+                    uploaded_file.name,  # Keep original name for display
+                    str(save_path),  # But save with unique path
                     submitted_by=st.session_state.get('user_email')
                 )
                 st.session_state.setdefault("recent_submission_ids", []).append(submission_id)
                 
                 st.success("✅ Submitted! Check 'My Submissions' tab")
-                st.balloons()
 
 with tab2:
     st.markdown("### Your Submissions")
     
     submissions = db.get_recent_submissions(limit=20, submitted_by=st.session_state.get('user_email'))
+    state_manager = StateManager()
     
     if submissions:
         for submission in submissions:
@@ -100,9 +111,41 @@ with tab2:
                     st.write(f"**Detected Company:** {submission['vendor_name']}")
                 if submission.get("risk_level"):
                     st.write(f"**Risk Level:** {submission['risk_level'].upper()} ({submission.get('risk_score', '—')})")
+                
+                # Load and display access recommendation if available
                 if submission.get("session_id"):
-                    if st.button("Open Live Visualization", key=f"viz_{submission['submission_id']}"):
-                        st.session_state['selected_session_id'] = submission['session_id']
-                        st.switch_page("pages/live_agent_visualization.py")
+                    try:
+                        state = state_manager.load_state(submission['session_id'])
+                        if state and state.access_recommendation:
+                            st.markdown("---")
+                            st.markdown("### ✅ Access Level Granted")
+                            
+                            access_level = state.access_recommendation.access_level
+                            access_color = {
+                                'standard': '#10b981',
+                                'read_only': '#f59e0b',
+                                'restricted': '#ef4444'
+                            }.get(access_level, '#6366f1')
+                            
+                            st.markdown(f"""
+                            <div style="background: #f0fdf4; border-left: 4px solid {access_color}; padding: 15px; border-radius: 6px; margin: 10px 0;">
+                                <div style="margin-bottom: 12px;">
+                                    <strong style="color: #065f46; font-size: 16px;">Access Level: {access_level.upper().replace('_', ' ')}</strong>
+                                </div>
+                                <div style="font-size: 14px; color: #111827; line-height: 1.8;">
+                                    <div style="margin-bottom: 8px;">
+                                        <strong>Permissions:</strong> {', '.join(state.access_recommendation.permissions)}
+                                    </div>
+                                    <div style="margin-bottom: 8px;">
+                                        <strong>Restrictions:</strong> {', '.join(state.access_recommendation.restrictions) if state.access_recommendation.restrictions else 'None'}
+                                    </div>
+                                    <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #e5e7eb;">
+                                        <strong>Justification:</strong> {state.access_recommendation.justification}
+                                    </div>
+                                </div>
+                            </div>
+                            """, unsafe_allow_html=True)
+                    except:
+                        pass  # If state doesn't exist or can't be loaded, skip
     else:
         st.info("📭 No submissions yet. Upload a document to get started!")

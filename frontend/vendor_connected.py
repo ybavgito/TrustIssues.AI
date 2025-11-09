@@ -106,7 +106,6 @@ with tab1:
                     st.session_state['last_session_id'] = state.session_id
                     
                     st.success(f"✅ Processing complete! Session ID: {state.session_id}")
-                    st.balloons()
                     
                     # Show quick results
                     if state.company_info:

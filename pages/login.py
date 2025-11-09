@@ -103,7 +103,6 @@ if role == 'vendor':
             st.session_state['role'] = 'vendor'
             st.session_state['user_email'] = email
             st.success("✅ Login successful!")
-            st.balloons()
             st.switch_page("pages/vendor_dashboard.py")
             st.rerun()
         else:
@@ -121,7 +120,6 @@ else:
             st.session_state['role'] = 'admin'
             st.session_state['user_email'] = email
             st.success("✅ Login successful!")
-            st.balloons()
             st.switch_page("pages/admin_dashboard.py")
             st.rerun()
         else:
