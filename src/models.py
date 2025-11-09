@@ -10,6 +10,7 @@ class CompanyInfo(BaseModel):
     registration_number: Optional[str] = None
     incorporation_date: Optional[str] = None
     address: Optional[str] = None
+    country: Optional[str] = None
     contact_email: Optional[str] = None
     contact_phone: Optional[str] = None
     bank_account: Optional[str] = None

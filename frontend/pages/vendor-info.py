@@ -39,13 +39,13 @@ case_id = st.session_state.get("case_id")
 
 if not case_id:
     st.warning("No approval case selected. Returning to Approval Dashboard.")
-    st.switch_page("approve-page.py") 
+    st.switch_page("pages/approvals.py") 
     st.stop()
 
 vendor_case = next((a for a in approvals if a["case_id"]==case_id), None)
 if not vendor_case:
     st.error(f"Approval case {case_id} not found. Returning to Dashboard.")
-    st.switch_page("approve-page.py") 
+    st.switch_page("pages/approvals.py") 
     st.stop()
 
 if "last_submission_dt" not in vendor_case:

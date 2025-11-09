@@ -76,7 +76,7 @@ else:
 # --- Navigation Function ---
 def navigate_to_vendor(case_id):
    st.session_state["case_id"] = case_id
-   st.switch_page("pages/vendor-info.py")
+   st.switch_page("frontend/pages/vendor-info.py")
 
 
 # --- Corrected display_cards function for approval-page.py ---
