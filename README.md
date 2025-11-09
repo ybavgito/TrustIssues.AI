@@ -1,8 +1,8 @@
-# RiskLens AI
+# TrustIssues.AI
 
 **Automated Vendor/Client Onboarding with Agentic Multi-Agent System**
 
-RiskLens AI is an intelligent, **Nemotron-powered multi-agent system** that automates vendor onboarding using specialized AI agents that reason, collaborate, and dynamically decide actions. The system extracts company data from PDFs, verifies identity through registry and sanctions checks, computes deterministic risk scores, explains reasoning with AI, and requires human approval before granting least-privilege system access.
+TrustIssues.AI is an intelligent, **Nemotron-powered multi-agent system** that automates vendor onboarding using specialized AI agents that reason, collaborate, and dynamically decide actions. The system extracts company data from PDFs, verifies identity through registry and sanctions checks, computes deterministic risk scores, explains reasoning with AI, and requires human approval before granting least-privilege system access.
 
 ## 🚀 NEW: Agentic Multi-Agent Architecture
 
@@ -145,7 +145,7 @@ The agent follows this exact decision tree:
 
 1. **Clone the repository**
 ```bash
-cd /Users/vaibhav/Downloads/risklens-ai
+cd /Users/vaibhav/Downloads/trustissues-ai
 ```
 
 2. **Create virtual environment**
@@ -179,7 +179,7 @@ EOF
    - Create a new API key
    - Copy and paste into `.env` file
 
-6. **Create sample PDFs (optional)**
+6. **Create sample PDFs**
 ```bash
 python scripts/create_sample_pdfs.py
 ```
@@ -224,8 +224,8 @@ When human review is required, you'll see:
 
 ```
 ╔══════════════════════════════════════════════════════════╗
-║           RiskLens AI - Vendor Onboarding               ║
-║        Automated Risk Assessment & Verification         ║
+║       TrustIssues.AI - Client/Vendor Onboarding          ║
+║        Automated Risk Assessment & Verification          ║
 ╚══════════════════════════════════════════════════════════╝
 
 HUMAN REVIEW REQUIRED
@@ -275,7 +275,7 @@ After approval, the system generates least-privilege access:
 ## 📁 Project Structure
 
 ```
-risklens-ai/
+trustissues-ai/
 ├── data/
 │   ├── sanctions_list.txt          # Sanctions database
 │   ├── sample_vendor_acme.txt      # Sample legitimate vendor
