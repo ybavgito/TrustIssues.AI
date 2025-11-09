@@ -1,10 +1,16 @@
-"""AI-Powered risk scoring engine"""
+"""AI-Powered risk scoring engine with industry-aware assessment"""
 import os
 import json
 from datetime import datetime
 from dateutil import parser
 from openai import OpenAI
 from src.models import RiskScore, ToolResult, CompanyInfo, RegistryResult, SanctionsResult
+from src.industry_config import (
+    detect_industry, 
+    get_industry_profile, 
+    get_industry_benchmark,
+    IndustryProfile
+)
 
 
 class RiskCalculator:
@@ -94,22 +100,40 @@ class RiskCalculator:
         sanctions_result: SanctionsResult,
         flags: dict
     ) -> ToolResult:
-        """AI-powered risk assessment using Nemotron"""
+        """AI-powered risk assessment using Nemotron with industry awareness"""
         
-        # Build comprehensive context
-        context = self._build_risk_context(company_info, registry_result, sanctions_result, flags)
+        # Detect industry
+        industry = detect_industry(company_info.business_type, company_info.address)
+        industry_profile = get_industry_profile(industry)
+        industry_benchmark = get_industry_benchmark(industry)
         
-        prompt = f"""You are an expert risk analyst for vendor onboarding. Analyze the following company profile and assess the overall risk.
+        # Build comprehensive context with industry awareness
+        context = self._build_risk_context_with_industry(
+            company_info, 
+            registry_result, 
+            sanctions_result, 
+            flags,
+            industry_profile,
+            industry_benchmark
+        )
+        
+        prompt = f"""You are an expert risk analyst for vendor onboarding with deep knowledge of industry-specific risk factors.
 
 {context}
 
-Consider:
-- Company legitimacy (registry verification, age, status)
-- Jurisdiction risk (country, regulatory environment)
-- Business profile (industry, type, operations)
-- Data completeness and quality
-- Any red flags or suspicious indicators
-- Context and patterns (e.g., UK tech company in 2024 vs Iranian company in 2020)
+CRITICAL: Assess risk with INDUSTRY CONTEXT in mind:
+- Different industries have different norms (tech startups vs banks vs construction)
+- Age expectations vary by industry (1-year tech = OK, 1-year bank = RED FLAG)
+- Regulatory requirements differ (finance = strict, consulting = lenient)
+- Missing industry-specific documentation is a major red flag
+
+Consider holistically:
+1. Company legitimacy (registry, age relative to industry norm, status)
+2. Industry-specific risk factors (highlighted above)
+3. Jurisdiction risk (country + industry combination)
+4. Business profile completeness for this industry
+5. Red flags specific to this industry
+6. How this company compares to industry benchmarks
 
 Provide a risk assessment in JSON format:
 {{
@@ -195,6 +219,87 @@ Be holistic - consider all factors together, not just individual points. A well-
             # Fallback on API error
             return self._deterministic_compute_risk(company_info, registry_result, sanctions_result, flags)
     
+    def _build_risk_context_with_industry(
+        self,
+        company_info: CompanyInfo,
+        registry_result: RegistryResult,
+        sanctions_result: SanctionsResult,
+        flags: dict,
+        industry_profile: IndustryProfile,
+        industry_benchmark: dict
+    ) -> str:
+        """Build comprehensive context with industry-specific insights"""
+        
+        # Calculate company age
+        age_years = None
+        age_info = "Company Age: Unknown"
+        if company_info.incorporation_date:
+            try:
+                inc_date = parser.parse(company_info.incorporation_date)
+                age_years = (datetime.now() - inc_date).days / 365.25
+                age_info = f"Company Age: {age_years:.1f} years"
+            except:
+                pass
+        
+        # Age comparison to industry
+        age_comparison = ""
+        if age_years and industry_benchmark:
+            avg_age = industry_benchmark.get('avg_age_years', 0)
+            median_age = industry_benchmark.get('median_age_years', 0)
+            if age_years < industry_profile.min_age_concern:
+                age_comparison = f" ⚠️ BELOW typical for {industry_profile.name} (avg: {avg_age:.1f}y, median: {median_age:.1f}y)"
+            elif industry_profile.optimal_age_range[0] <= age_years <= industry_profile.optimal_age_range[1]:
+                age_comparison = f" ✓ Within normal range for {industry_profile.name} (avg: {avg_age:.1f}y)"
+            else:
+                age_comparison = f" → Compared to industry avg: {avg_age:.1f}y, median: {median_age:.1f}y"
+        
+        context = f"""COMPANY PROFILE:
+- Name: {company_info.company_name or 'Unknown'}
+- Registration: {company_info.registration_number or 'Not provided'}
+- Country: {company_info.country or 'Unknown'}
+- Business Type: {company_info.business_type or 'Unknown'}
+- {age_info}{age_comparison}
+- Address: {company_info.address or 'Not provided'}
+
+INDUSTRY ANALYSIS:
+- Detected Industry: {industry_profile.name}
+- Regulatory Strictness: {industry_profile.regulatory_strictness.upper()}
+- Typical Risk Level: {industry_profile.typical_risk_level.upper()}
+- Min Expected Age: {industry_profile.min_age_concern} years
+- Optimal Age Range: {industry_profile.optimal_age_range[0]}-{industry_profile.optimal_age_range[1]} years
+
+INDUSTRY-SPECIFIC RED FLAGS:
+{chr(10).join(f"  • {flag}" for flag in industry_profile.common_red_flags)}
+
+REQUIRED FOR THIS INDUSTRY:
+{chr(10).join(f"  • {doc}" for doc in industry_profile.must_have_docs) if industry_profile.must_have_docs else "  • No specific documentation mandated"}
+
+HIGH-RISK INDICATORS (for this industry):
+{chr(10).join(f"  • {indicator}" for indicator in industry_profile.high_risk_indicators[:5])}
+
+VERIFICATION RESULTS:
+- Registry Match: {'YES' if registry_result.match else 'NO'}
+- Registry Status: {registry_result.status or 'Unknown'}
+- Registry Confidence: {registry_result.confidence:.0%}
+- Sanctions Check: {'CLEAR' if not sanctions_result.match else 'MATCH FOUND'}
+
+INDUSTRY BENCHMARK COMPARISON:
+- Industry Avg Risk Score: {industry_benchmark.get('avg_risk_score', 'N/A')}
+- Industry Approval Rate: {industry_benchmark.get('approval_rate', 0)*100:.0f}%
+- Typical Countries: {', '.join(industry_benchmark.get('typical_countries', ['N/A'])[:3])}
+- This Company's Country: {company_info.country or 'Unknown'} {'✓' if company_info.country in industry_benchmark.get('typical_countries', []) else '⚠️ Less common for this industry'}
+
+DATA QUALITY:
+- Complete Registration: {'Yes' if company_info.registration_number else 'No'}
+- Complete Address: {'Yes' if company_info.address else 'No'}
+- Complete Banking: {'Yes' if company_info.bank_account else 'No'}
+- Complete Contact: {'Yes' if company_info.contact_email else 'No'}
+
+ADDITIONAL FLAGS:
+{chr(10).join(f"- {k}: {v}" for k, v in flags.items()) if flags else "- None"}
+"""
+        return context
+    
     def _build_risk_context(
         self,
         company_info: CompanyInfo,
@@ -202,7 +307,7 @@ Be holistic - consider all factors together, not just individual points. A well-
         sanctions_result: SanctionsResult,
         flags: dict
     ) -> str:
-        """Build comprehensive context for AI risk assessment"""
+        """Build comprehensive context for AI risk assessment (fallback without industry)"""
         
         # Calculate company age
         age_info = ""

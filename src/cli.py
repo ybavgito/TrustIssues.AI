@@ -13,6 +13,7 @@ from tabulate import tabulate
 from src.models import AgentState
 from src.state_manager import StateManager
 from src.agent import RiskLensAgent
+from src.industry_config import detect_industry, get_industry_profile
 
 # Initialize colorama
 init(autoreset=True)
@@ -268,11 +269,19 @@ class RiskLensCLI:
         print()
     
     def _display_risk_assessment(self, state: AgentState):
-        """Display risk assessment"""
+        """Display risk assessment with industry context"""
         if not state.risk_score:
             return
         
         print(f"{Fore.CYAN}Risk Assessment:{Style.RESET_ALL}")
+        
+        # Display industry context
+        if state.company_info:
+            industry = detect_industry(state.company_info.business_type, state.company_info.address)
+            industry_profile = get_industry_profile(industry)
+            print(f"\n{Fore.MAGENTA}  Industry: {industry_profile.name}{Style.RESET_ALL}")
+            print(f"{Fore.MAGENTA}  Regulatory: {industry_profile.regulatory_strictness.upper()}{Style.RESET_ALL}")
+            print(f"{Fore.MAGENTA}  Typical Risk: {industry_profile.typical_risk_level.upper()}{Style.RESET_ALL}\n")
         
         # Risk level with color
         level = state.risk_score.risk_level.upper()
