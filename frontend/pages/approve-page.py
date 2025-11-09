@@ -12,15 +12,16 @@ st.set_page_config(page_title="RiskLens AI Approvals", layout="wide")
 
 st.markdown("""
 <style>
-/* --- 0. CRITICAL STREAMLIT OVERRIDES --- */
+.stApp {
+    background: #000000; 
+    background-image: none; ]
+}
 
-/* Remove default padding/margin on Streamlit containers in the column */
 div[data-testid*="stVerticalBlock"] > div:first-child > div:nth-child(2) {
     margin-bottom: 0px !important;
     padding-bottom: 0px !important;
 }
 
-/* --- 1. GENERAL LAYOUT (Dark Mode) --- */
 body {
     /* Dark background gradient */
     background: linear-gradient(to right, #121212, #1e1e1e);

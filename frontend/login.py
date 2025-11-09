@@ -8,7 +8,7 @@ USER_CREDENTIALS = {
 }
 
 ADMIN_PAGE = "pages/approve-page.py"
-VENDOR_PAGE = "pages/vendor.py"
+VENDOR_PAGE = "pages/vendor_connected.py"
 
 def login_page():
     st.set_page_config(layout="centered", page_title="Eye-Popping Login")

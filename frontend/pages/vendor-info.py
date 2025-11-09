@@ -11,6 +11,12 @@ st.markdown("""
 /* --- 1. UNIVERSAL STYLES (For Consistency) --- */
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
 
+/* Solid Black Body Background for Dark Mode */
+.stApp {
+    background: #000000; /* Pure Black Background */
+    background-image: none; /* Ensure no old gradient image interferes */
+}
+
 html, body, [class*="st-emotion-cache"] {
     font-family: 'Montserrat', sans-serif;
     color: #ffffff; 
@@ -26,7 +32,7 @@ div[data-testid="stSidebarNav"] { display: none; }
 /* Header Text (Ensure visibility) */
 h1, h2, h4 {
     /* Set h1, h2, h4 to the desired dark color */
-    color: #333333 !important; /* Deep Charcoal Black */
+    color: #ffffff !important; /* Deep Charcoal Black */
     text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.2); /* Lighter shadow for dark text */
 }
 
@@ -312,7 +318,6 @@ fig.update_layout(
 
 st.plotly_chart(fig, use_container_width=True)
 
-st.subheader("Decision")
 col1, col2 = st.columns([1,1])
 
 
