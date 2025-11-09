@@ -1,4 +1,14 @@
 import streamlit as st
+import time
+
+# Authentication Mock Data
+USER_CREDENTIALS = {
+    "adminuser": {"password": "adminpassword", "role": "admin"},
+    "vendoruser": {"password": "vendorpassword", "role": "vendor"},
+}
+
+ADMIN_PAGE = "pages/approve-page.py"
+VENDOR_PAGE = "pages/vendor.py"
 
 def login_page():
     st.set_page_config(layout="centered", page_title="Eye-Popping Login")
@@ -117,24 +127,41 @@ def login_page():
             submitted = st.form_submit_button("Login")
 
             if submitted:
-                # --- Dummy Authentication ---
-                if username == "admin" and password == "password123":
-                    st.success("Login Successful! Redirecting...")
+                user_info = USER_CREDENTIALS.get(username)
+
+                if user_info and user_info["password"] == password:
+                    # 1. Set Session State variables
                     st.session_state["logged_in"] = True
-                    st.rerun()
+                    st.session_state["role"] = user_info["role"]
+                    
+                    st.success(f"Login Successful! Redirecting as {user_info['role']}...")
+                    time.sleep(1) # Visual delay for the user
+
+                    # 2. Perform Role-Based Redirection
+                    if st.session_state["role"] == "admin":
+                        st.switch_page(ADMIN_PAGE) # Redirect to pages/approve-page.py
+                    elif st.session_state["role"] == "vendor":
+                        st.switch_page(VENDOR_PAGE) # Redirect to pages/vendor.py
+                    # st.switch_page stops execution
                 else:
                     st.error("Invalid Username or Password")
 
-# --- Main App Logic ---
 if __name__ == "__main__":
+    
     if "logged_in" not in st.session_state:
         st.session_state["logged_in"] = False
-
+        st.session_state["role"] = None 
     if st.session_state["logged_in"]:
-        st.success("You are logged in!")
-        st.write("This is your super secret main app content.")
-        if st.button("Logout"):
+        role = st.session_state["role"]
+        
+        if role == "admin":
+            st.switch_page(ADMIN_PAGE)
+        elif role == "vendor":
+            st.switch_page(VENDOR_PAGE)
+        else:
+            st.error("Invalid session state. Logging out.")
             st.session_state["logged_in"] = False
             st.rerun()
+
     else:
         login_page()
