@@ -8,13 +8,13 @@ header {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 
-st.set_page_config(page_title="RiskLens AI Approvals", layout="wide")
+st.set_page_config(page_title="TrustIssues.ai Approvals", layout="wide")
 
 st.markdown("""
 <style>
 .stApp {
     background: #000000; 
-    background-image: none; ]
+    background-image: none; 
 }
 
 div[data-testid*="stVerticalBlock"] > div:first-child > div:nth-child(2) {
@@ -39,7 +39,7 @@ body {
     margin-bottom: 25px;
 }
 h3 {
-    color: #f0f0f0; /* Ensure Streamlit subheaders are visible */
+    color: #ffffff; /* Ensure Streamlit subheaders are visible */
 }
 
 /* --- 2. PREMIUM CARD STYLES --- */
@@ -132,10 +132,13 @@ h3 {
     color: white !important;
 }
 
+h3 {
+    color: #ffffff !important; 
+}
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="navbar">RiskLens AI - Approvals Dashboard</div>', unsafe_allow_html=True)
+st.markdown('<div class="navbar">TrustIssues.ai - Approvals Dashboard</div>', unsafe_allow_html=True)
 
 
 sort_by = st.selectbox("Sort approvals by:", ["Risk Score (high → low)", "Last Submission (recent → old)"])

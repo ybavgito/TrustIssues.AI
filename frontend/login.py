@@ -1,7 +1,6 @@
 import streamlit as st
 import time
 
-# Authentication Mock Data
 USER_CREDENTIALS = {
     "adminuser": {"password": "adminpassword", "role": "admin"},
     "vendoruser": {"password": "vendorpassword", "role": "vendor"},
