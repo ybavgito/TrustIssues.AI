@@ -8,15 +8,31 @@ header {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 
-st.set_page_config(page_title="RiskLens AI Approvals", layout="wide")
+st.set_page_config(page_title="TrustIssues AI Approvals", layout="wide")
 
 st.markdown("""
 <style>
-body {
-    background: linear-gradient(to right, #f0f4f8, #d9e2ec);
+/* --- Google Font --- */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
+
+/* --- Base Theme --- */
+html, body, [class*="st-emotion-cache"] {
+    font-family: 'Montserrat', sans-serif;
 }
+
+.stApp {
+    background: linear-gradient(135deg, #111827, #1f2937); /* Dark slate gradient */
+    color: #F3F4F6; /* Light primary text for legibility */
+}
+
+/* --- Hide Streamlit Chrome --- */
+#MainMenu { visibility: hidden; }
+header { visibility: hidden; }
+footer { visibility: hidden; }
+
+/* --- Navbar --- */
 .navbar {
-    background: linear-gradient(90deg, #0FB5A8, #056D63);
+    background: linear-gradient(90deg, #0FB5A8, #056D63); /* Your brand's teal */
     padding: 15px;
     border-radius: 10px;
     text-align: center;
@@ -25,17 +41,64 @@ body {
     color: white;
     margin-bottom: 25px;
 }
+
+/* --- Cards & Containers --- */
 .card {
+    background-color: #1f2937; /* Lighter than BG for depth */
     border-radius: 10px;
-    padding: 15px;
+    padding: 25px;
     margin-bottom: 20px;
-    box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    border: 1px solid #374151; /* Subtle border */
+    /* NOTE: Risk colors are applied below */
 }
+
+/* --- Text & Headings --- */
+h1, h2, h3, h4, h5, h6 {
+    color: #FFFFFF; /* Bright white for headers */
+}
+p, label, .st-write, .st-markdown {
+     color: #F3F4F6; /* Light gray for body text */
+}
+
+/* --- Selectbox (Sort) --- */
+div[data-testid="stSelectbox"] label {
+    color: #9CA3AF !important; /* Lighter label color */
+}
+div[data-testid="stSelectbox"] div[data-testid="stMarkdownContainer"] {
+    background-color: #374151; /* Dark input BG */
+    color: #F3F4F6;
+    border: 1px solid #4B5563;
+    border-radius: 8px;
+}
+
+/* --- Buttons --- */
+.stButton > button {
+    background: linear-gradient(90deg, #0FB5A8, #056D63);
+    color: white;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    transition: all 0.3s ease;
+}
+.stButton > button:hover {
+    background: linear-gradient(90deg, #056D63, #0FB5A8);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(5, 109, 99, 0.3);
+}
+.stButton > button:focus {
+    box-shadow: 0 0 0 0.2rem rgba(15, 181, 168, 0.5) !important;
+}
+
+/* --- Risk/Status Card Styles --- */
 .high-priority {
-    background: linear-gradient(135deg, #ffcccc, #ff6666);
+    background-color: rgba(244, 67, 54, 0.05); /* Faint red BG */
+    border-left: 5px solid #F44336; /* Red */
 }
 .pending {
-    background: linear-gradient(135deg, #ccf2ff, #66c2ff);
+    background-color: rgba(255, 152, 0, 0.05); /* Faint orange BG */
+    border-left: 5px solid #FF9800; /* Orange */
 }
 </style>
 """, unsafe_allow_html=True)

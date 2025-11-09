@@ -30,13 +30,30 @@ footer {visibility: hidden;}
 """, unsafe_allow_html=True)
 
 # Custom CSS
+# Custom CSS
 st.markdown("""
 <style>
-body {
-    background: linear-gradient(to right, #f0f4f8, #d9e2ec);
+/* --- Google Font --- */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
+
+/* --- Base Theme --- */
+html, body, [class*="st-emotion-cache"] {
+    font-family: 'Montserrat', sans-serif;
 }
+
+.stApp {
+    background: linear-gradient(135deg, #111827, #1f2937); /* Dark slate gradient */
+    color: #F3F4F6; /* Light primary text for legibility */
+}
+
+/* --- Hide Streamlit Chrome --- */
+#MainMenu { visibility: hidden; }
+header { visibility: hidden; }
+footer { visibility: hidden; }
+
+/* --- Navbar --- */
 .navbar {
-    background: linear-gradient(90deg, #0FB5A8, #056D63);
+    background: linear-gradient(90deg, #0FB5A8, #056D63); /* Your brand's teal */
     padding: 15px;
     border-radius: 10px;
     text-align: center;
@@ -45,15 +62,103 @@ body {
     color: white;
     margin-bottom: 25px;
 }
+
+/* --- Cards & Containers --- */
 .form-container {
-    background-color: #ffffff;
+    background-color: #1f2937; /* Lighter than BG for depth */
     border-radius: 10px;
     padding: 25px;
-    box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
     margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    border: 1px solid #374151; /* Subtle border */
 }
+
+/* --- Text & Headings --- */
+h1, h2, h3, h4, h5, h6 {
+    color: #FFFFFF; /* Bright white for headers */
+}
+p, label, .st-write, .st-markdown {
+     color: #F3F4F6; /* Light gray for body text */
+}
+
+/* --- Inputs (File Uploader) --- */
+div[data-testid="stFileUploader"] label {
+    color: #9CA3AF !important; /* Lighter label color */
+}
+
+/* --- Buttons --- */
+.stButton > button, div[data-testid="stFormSubmitButton"] > button {
+    background: linear-gradient(90deg, #0FB5A8, #056D63);
+    color: white;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    transition: all 0.3s ease;
+}
+.stButton > button:hover, div[data-testid="stFormSubmitButton"] > button:hover {
+    background: linear-gradient(90deg, #056D63, #0FB5A8);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(5, 109, 99, 0.3);
+}
+.stButton > button:focus, div[data-testid="stFormSubmitButton"] > button:focus {
+    box-shadow: 0 0 0 0.2rem rgba(15, 181, 168, 0.5) !important;
+}
+
+/* --- Tabs --- */
+.stTabs [data-baseweb="tab"] {
+    background-color: transparent;
+    color: #9CA3AF;
+}
+.stTabs [data-baseweb="tab"][aria-selected="true"] {
+    background-color: #1f2937;
+    color: #FFFFFF;
+    border-radius: 8px 8px 0 0;
+}
+
+/* --- Risk/Decision Boxes --- */
+.risk-box, .decision-box {
+    padding: 20px;
+    border-radius: 8px;
+    border-left-width: 5px;
+    border-left-style: solid;
+    margin-bottom: 10px;
+}
+/* Risk Box Colors */
+.risk-box-high { 
+    background-color: rgba(244, 67, 54, 0.05); 
+    border-left-color: #F44336; 
+}
+.risk-box-medium { 
+    background-color: rgba(255, 152, 0, 0.05); 
+    border-left-color: #FF9800; 
+}
+.risk-box-low { 
+    background-color: rgba(76, 175, 80, 0.05); 
+    border-left-color: #4CAF50; 
+}
+/* Risk Box Header Colors */
+.risk-box-high h2 { color: #F44336; }
+.risk-box-medium h2 { color: #FF9800; }
+.risk-box-low h2 { color: #4CAF50; }
+
+/* Decision Box Colors */
+.decision-box-approved { 
+    background-color: rgba(76, 175, 80, 0.05); 
+    border-left-color: #4CAF50; 
+}
+.decision-box-rejected { 
+    background-color: rgba(244, 67, 54, 0.05); 
+    border-left-color: #F44336; 
+}
+.decision-box-request_more_info { 
+    background-color: rgba(255, 152, 0, 0.05); 
+    border-left-color: #FF9800; 
+}
+
+/* --- Status Box (from original file) --- */
 .status-box {
-    background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+    background: linear-gradient(135deg, #1a2a1a, #1f3a1f);
     border-left: 4px solid #4caf50;
     padding: 15px;
     border-radius: 8px;
@@ -80,7 +185,6 @@ agent, state_manager = get_agent_system()
 tab1, tab2, tab3 = st.tabs(["📤 Submit Vendor", "📊 View Results", "📋 Recent Sessions"])
 
 with tab1:
-    st.markdown('<div class="form-container">', unsafe_allow_html=True)
     st.subheader("Submit New Vendor for Analysis")
     
     uploaded_file = st.file_uploader(
@@ -178,20 +282,17 @@ with tab2:
                 st.markdown("### 📊 Risk Assessment")
                 
                 risk_level = state.risk_score.risk_level.upper()
-                risk_color = {
-                    "LOW": "#4caf50",
-                    "MEDIUM": "#ff9800",
-                    "HIGH": "#f44336"
-                }.get(risk_level, "#757575")
+                risk_level_class = {
+                    "LOW": "low",
+                    "MEDIUM": "medium",
+                    "HIGH": "high"
+                }.get(risk_level, "medium") # default to medium
                 
                 col1, col2 = st.columns([1, 2])
                 with col1:
                     st.markdown(f"""
-                    <div style="background: {risk_color}20; border-left: 4px solid {risk_color}; 
-                                padding: 20px; border-radius: 8px;">
-                        <h2 style="margin: 0; color: {risk_color};">
-                            {state.risk_score.total_score}/100
-                        </h2>
+                    <div class="risk-box risk-box-{risk_level_class}">
+                        <h2 style="margin: 0;">{state.risk_score.total_score}/100</h2>
                         <p style="margin: 5px 0 0 0; font-weight: bold;">
                             {risk_level} RISK
                         </p>
@@ -227,16 +328,11 @@ with tab2:
                 st.markdown("### 👤 Human Review Required")
                 
                 if state.human_decision:
-                    decision_color = {
-                        "approved": "#4caf50",
-                        "rejected": "#f44336",
-                        "request_more_info": "#ff9800"
-                    }.get(state.human_decision, "#757575")
+                    decision_class = f"decision-box-{state.human_decision}"
                     
                     st.markdown(f"""
-                    <div style="background: {decision_color}20; border-left: 4px solid {decision_color}; 
-                                padding: 15px; border-radius: 8px;">
-                        <strong>Decision:</strong> {state.human_decision.upper()}
+                    <div class="decision-box {decision_class}">
+                        <strong>Decision:</strong> {state.human_decision.upper().replace('_', ' ')}
                         {f'<br><strong>Notes:</strong> {state.human_notes}' if state.human_notes else ''}
                     </div>
                     """, unsafe_allow_html=True)

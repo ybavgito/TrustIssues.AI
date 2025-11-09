@@ -6,103 +6,97 @@ def login_page():
     # --- CSS ---
     st.markdown("""
         <style>
-        /* --- NEW: Hide "Press Enter to submit form" --- */
-        /* This targets the helper text in text_input and password_input */
+        /* --- Google Font --- */
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
+
+        /* --- Base Theme --- */
+        html, body, [class*="st-emotion-cache"] {
+            font-family: 'Montserrat', sans-serif;
+        }
+        
+        .stApp {
+            background: linear-gradient(135deg, #111827, #1f2937); /* Dark slate gradient */
+            color: #F3F4F6; /* Light primary text for legibility */
+        }
+
+        /* --- Hide Streamlit Chrome --- */
+        #MainMenu { visibility: hidden; }
+        header { visibility: hidden; }
+        footer { visibility: hidden; }
+        div[data-testid="stSidebarNav"] { display: none; } /* Hide sidebar for login page */
+
+        /* --- Hide "Press Enter" helper text --- */
         div[data-testid="stTextInput"] label > div:nth-of-type(2),
         div[data-testid="stPasswordInput"] label > div:nth-of-type(2) {
             display: none;
         }
-        
-        /* --- Hide default Streamlit navigation --- */
-        #MainMenu { visibility: hidden; }
-        header { visibility: hidden; }
-        footer { visibility: hidden; }
-        div[data-testid="stSidebarNav"] { display: none; }
-        
-        /* --- Your eye-popping styles from before --- */
-        
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
 
-        html, body, [class*="st-emotion-cache"] {
-            font-family: 'Montserrat', sans-serif;
-            color: #ffffff;
-        }
-
-        .stApp {
-            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
-        }
-
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        .st-emotion-cache-1pxazr7 {
-            background-color: rgba(0, 0, 0, 0.4);
+        /* --- Login Container (mimics .card) --- */
+        /* This targets the container holding the form */
+        .st-emotion-cache-1pxazr7 { 
+            background-color: #1f2937; /* Lighter than BG for depth */
             padding: 40px;
             border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid #374151; /* Subtle border */
             max-width: 500px;
             margin: 50px auto;
         }
 
+        /* --- Text & Headings --- */
         h1 {
-            color: #f0f2f6;
+            color: #FFFFFF; /* Bright white for header */
             text-align: center;
             margin-bottom: 30px;
-            text-shadow: 2px 2px 8px rgba(0,0,0,0.7);
+            text-shadow: none;
+        }
+        h3, p, label, .st-write, .st-markdown, .st-emotion-cache-vk336y label {
+             color: #F3F4F6 !important; /* Light gray for body text */
         }
 
-        .st-emotion-cache-v06ymw, .st-emotion-cache-1xw8zd0 {
-            background-color: rgba(255, 255, 255, 0.1);
-            color: #e0e0e0;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+        /* --- Inputs (Text, Password) --- */
+        div[data-testid="stTextInput"] label,
+        div[data-testid="stPasswordInput"] label {
+            color: #9CA3AF !important; /* Lighter label color */
+        }
+
+        div[data-testid="stTextInput"] input,
+        div[data-testid="stPasswordInput"] input {
+            background-color: #374151; /* Dark input BG */
+            color: #F3F4F6;
+            border: 1px solid #4B5563;
             border-radius: 8px;
-            padding: 10px 15px;
-            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
         }
-
-        .st-emotion-cache-v06ymw:focus, .st-emotion-cache-1xw8zd0:focus {
-            border-color: #fdbb2d;
-            box-shadow: 0 0 0 0.2rem rgba(253, 187, 45, 0.25);
-        }
-
-        .st-emotion-cache-vk336y button {
+        
+        /* --- Login Button --- */
+        div[data-testid="stFormSubmitButton"] > button {
             width: 100%;
-            padding: 12px 20px;
-            border-radius: 8px;
-            border: none;
-            background-image: linear-gradient(to right, #fdbb2d 0%, #22c1c3 100%);
+            background: linear-gradient(90deg, #0FB5A8, #056D63);
             color: white;
-            font-size: 1.1em;
             font-weight: bold;
-            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 20px;
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
             margin-top: 20px;
         }
-
-        .st-emotion-cache-vk336y button:hover {
-            background-image: linear-gradient(to right, #22c1c3 0%, #fdbb2d 100%);
+        div[data-testid="stFormSubmitButton"] > button:hover {
+            background: linear-gradient(90deg, #056D63, #0FB5A8);
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 6px 20px rgba(5, 109, 99, 0.3);
         }
-
-        .st-emotion-cache-nahz7x, .st-emotion-cache-1l02zvs {
+        div[data-testid="stFormSubmitButton"] > button:focus {
+            box-shadow: 0 0 0 0.2rem rgba(15, 181, 168, 0.5) !important;
+        }
+        
+        /* --- Alerts (Success/Error) --- */
+        .stAlert {
             border-radius: 8px;
-            padding: 10px;
-            margin-top: 20px;
-        }
-
-        .st-emotion-cache-vk336y label {
-            color: #e0e0e0 !important;
         }
         </style>
         """, unsafe_allow_html=True)
-
+        
     # --- Login Form ---
     st.title("Welcome Back! 👋")
 
