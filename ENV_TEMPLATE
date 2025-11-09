@@ -1,0 +1,23 @@
+# RiskLens AI Configuration
+# Copy this file to .env and fill in your values
+
+# ============================================
+# NVIDIA NIM API (REQUIRED)
+# ============================================
+# Get your API key from: https://build.nvidia.com/
+NVIDIA_API_KEY=nvapi-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+NVIDIA_BASE_URL=https://integrate.api.nvidia.com/v1
+
+# ============================================
+# Registry API (OPTIONAL)
+# ============================================
+# If not provided, uses mock data
+REGISTRY_API_KEY=
+REGISTRY_API_URL=https://api.companieshouse.gov.uk
+
+# ============================================
+# Sanctions API (OPTIONAL)
+# ============================================
+# If not provided, uses local sanctions list
+SANCTIONS_API_KEY=
+

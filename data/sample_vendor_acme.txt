@@ -1,0 +1,66 @@
+===============================================
+      VENDOR ONBOARDING APPLICATION
+===============================================
+
+COMPANY INFORMATION
+
+Company Name: ACME Corporation
+Registration Number: UK-12345678
+Incorporation Date: 15-03-2018
+Business Type: Technology Services
+
+CONTACT DETAILS
+
+Registered Address:
+123 Business Street
+London, EC1A 1BB
+United Kingdom
+
+Contact Email: info@acmecorp.com
+Contact Phone: +44 20 1234 5678
+
+BANKING INFORMATION
+
+Bank Account: GB29NWBK60161331926819
+Bank Name: National Westminster Bank
+SWIFT Code: NWBKGB2L
+
+BUSINESS DESCRIPTION
+
+ACME Corporation specializes in providing enterprise 
+software solutions and IT consulting services to 
+mid-sized businesses across Europe. We have been 
+operating successfully for over 5 years with a 
+strong track record of client satisfaction.
+
+Our main services include:
+- Cloud infrastructure consulting
+- Software development
+- IT security auditing
+- Business process automation
+
+COMPLIANCE
+
+We are fully compliant with:
+- GDPR regulations
+- ISO 27001 certification
+- UK Companies House registration
+- FCA financial guidelines
+
+REQUESTED ACCESS
+
+We are requesting standard vendor access to:
+- Submit purchase orders
+- View invoices and payment status
+- Upload delivery documentation
+- Access support portal
+
+DECLARATION
+
+I declare that all information provided is accurate 
+and complete to the best of my knowledge.
+
+Signed: John Smith
+Position: Managing Director
+Date: 08-11-2025
+

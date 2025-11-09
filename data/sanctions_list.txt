@@ -1,0 +1,15 @@
+# Sanctions List
+# Format: Entity Name | List Name | Details
+# This is a sample sanctions list for demonstration purposes
+
+Evil Corp International | OFAC SDN | Sanctions for money laundering and financial crimes
+BadActor Industries Ltd | UN Sanctions | Human rights violations and corruption
+Sanctioned Trading Co | EU Sanctions List | Arms trafficking and weapons proliferation
+Blocked Enterprises LLC | OFAC SDN | Terrorism financing and support
+Prohibited Partners Inc | UN Sanctions | Nuclear materials proliferation
+Malicious Global Holdings | UK HM Treasury | Financial fraud and asset freezing
+Corrupt Ventures International | OFAC SDN | Corruption and bribery schemes
+Dark Money Corporation | FATF Grey List | Money laundering concerns
+Illicit Trade Partners | EU Sanctions | Circumvention of trade restrictions
+Shadow Banking Group | Multiple Lists | Shell company network for sanctions evasion
+
