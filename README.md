@@ -1,8 +1,8 @@
-# RiskLens AI
+# TrustIssues.AI
 
 **Automated Vendor/Client Onboarding with Agentic Multi-Agent System**
 
-RiskLens AI is an intelligent, **Nemotron-powered multi-agent system** that automates vendor onboarding using specialized AI agents that reason, collaborate, and dynamically decide actions. The system extracts company data from PDFs, verifies identity through registry and sanctions checks, computes deterministic risk scores, explains reasoning with AI, and requires human approval before granting least-privilege system access.
+TrustIssues.AI is an intelligent, **Nemotron-powered multi-agent system** that automates vendor onboarding using specialized AI agents that reason, collaborate, and dynamically decide actions. The system extracts company data from PDFs, verifies identity through registry and sanctions checks, computes deterministic risk scores, explains reasoning with AI, and requires human approval before granting least-privilege system access.
 
 ## 🚀 NEW: Agentic Multi-Agent Architecture
 
@@ -96,7 +96,7 @@ RiskLens AI is an intelligent, **Nemotron-powered multi-agent system** that auto
 
 ## 🔄 Workflow
 
-### Agent Planner Logic (DO NOT CHANGE)
+### Agent Planner Logic
 
 The agent follows this exact decision tree:
 
@@ -275,7 +275,7 @@ After approval, the system generates least-privilege access:
 ## 📁 Project Structure
 
 ```
-risklens-ai/
+trustissues-ai/
 ├── data/
 │   ├── sanctions_list.txt          # Sanctions database
 │   ├── sample_vendor_acme.txt      # Sample legitimate vendor
