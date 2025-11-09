@@ -153,7 +153,24 @@ div[data-testid*="stVegaLiteChart"] {
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     border: 1px solid #444444; 
 }
-            
+
+/* --- NEW RECOMMENDATION BOX STYLE --- */
+.recommendation-box {
+    background-color: #000000; /* Pure Black */
+    color: white;              /* White Text */
+    border-radius: 12px;
+    padding: 20px 25px;
+    margin-top: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1); /* Subtle white shadow */
+}
+
+/* Ensure the h2 inside is white and overrides the dark h2 rule */
+.recommendation-box h2 {
+    color: white !important;
+    text-shadow: none !important;
+    margin: 0; /* Remove default margin */
+}  
             
 </style>
 """, unsafe_allow_html=True)
@@ -222,6 +239,15 @@ def update_status(case_id, new_status):
             break
     st.rerun() 
 
+st.markdown(
+    f"""
+    <div class='recommendation-box'>
+        <h2>Recommendation for {vendor_case['vendor']}</h2>
+        <p>Lorem Ipsum</p>
+    </div>
+    """, 
+    unsafe_allow_html=True
+)
 
 def fetch_risk_factors(vendor_name):
     """
@@ -247,10 +273,7 @@ vendor_risk_df = fetch_risk_factors(vendor_case['vendor'])
 
 st.markdown(f"<h2>Risk Factor Distribution for {vendor_case['vendor']}</h2>", unsafe_allow_html=True)
 import plotly.express as px
-# ... (vendor_risk_df, vendor_case defined above)
 
-# Use a custom color sequence that fits the dark theme (e.g., Viridis or Cividis)
-# Or manually define colors to match your mauve/teal/gold scheme
 custom_colors = ['#cc4499', '#009688', '#ffcc66', '#fdbb2d', '#2196f3'] 
 
 fig = px.pie(
