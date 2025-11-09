@@ -8,80 +8,12 @@ st.set_page_config(page_title="Vendor Info", layout="wide")
 
 st.markdown("""
 <style>
-/* --- Google Font --- */
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
-
-/* --- Base Theme --- */
-html, body, [class*="st-emotion-cache"] {
-    font-family: 'Montserrat', sans-serif;
-}
-
-.stApp {
-    background: linear-gradient(135deg, #111827, #1f2937); /* Dark slate gradient */
-    color: #F3F4F6; /* Light primary text for legibility */
-}
-
-/* --- Hide Streamlit Chrome --- */
-#MainMenu { visibility: hidden; }
-header { visibility: hidden; }
-footer { visibility: hidden; }
-
-/* --- Cards & Containers --- */
-.card {
-    background-color: #1f2937; /* Lighter than BG for depth */
-    border-radius: 10px;
-    padding: 25px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    border: 1px solid #374151; /* Subtle border */
-    /* NOTE: Risk colors are applied below */
-}
-
-/* --- Text & Headings --- */
-h1, h2, h3, h4, h5, h6 {
-    color: #FFFFFF; /* Bright white for headers */
-}
-p, label, .st-write, .st-markdown {
-     color: #F3F4F6; /* Light gray for body text */
-}
-
-/* --- Buttons --- */
-.stButton > button {
-    background: linear-gradient(90deg, #0FB5A8, #056D63);
-    color: white;
-    font-weight: bold;
-    border: none;
-    border-radius: 8px;
-    padding: 10px 20px;
-    transition: all 0.3s ease;
-}
-.stButton > button:hover {
-    background: linear-gradient(90deg, #056D63, #0FB5A8);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(5, 109, 99, 0.3);
-}
-.stButton > button:focus {
-    box-shadow: 0 0 0 0.2rem rgba(15, 181, 168, 0.5) !important;
-}
-
-/* --- Risk/Status Card Styles --- */
-.high-risk {
-    background-color: rgba(244, 67, 54, 0.05); /* Faint red BG */
-    border-left: 5px solid #F44336; /* Red */
-}
-.medium-risk {
-    background-color: rgba(255, 152, 0, 0.05); /* Faint orange BG */
-    border-left: 5px solid #FF9800; /* Orange */
-}
-.low-risk {
-    background-color: rgba(76, 175, 80, 0.05); /* Faint green BG */
-    border-left: 5px solid #4CAF50; /* Green */
-}
-
-/* --- Alerts (Info) --- */
-.stAlert {
-    border-radius: 8px;
-}
+header {visibility:hidden;}
+footer {visibility:hidden;}
+.card {border-radius:10px;padding:15px;margin-bottom:20px;box-shadow: 2px 2px 10px rgba(0,0,0,0.1);}
+.high-risk {background: linear-gradient(135deg,#ffcccc,#ff6666);}
+.medium-risk {background: linear-gradient(135deg,#fff2cc,#ffcc66);}
+.low-risk {background: linear-gradient(135deg,#ccf2ff,#66c2ff);}
 </style>
 """, unsafe_allow_html=True)
 
@@ -107,13 +39,13 @@ case_id = st.session_state.get("case_id")
 
 if not case_id:
     st.warning("No approval case selected. Returning to Approval Dashboard.")
-    st.switch_page("pages/approvals.py") 
+    st.switch_page("pages/approve-page.py") 
     st.stop()
 
 vendor_case = next((a for a in approvals if a["case_id"]==case_id), None)
 if not vendor_case:
     st.error(f"Approval case {case_id} not found. Returning to Dashboard.")
-    st.switch_page("pages/approvals.py") 
+    st.switch_page("pages/approve-page.py") 
     st.stop()
 
 if "last_submission_dt" not in vendor_case:

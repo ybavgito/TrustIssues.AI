@@ -8,6 +8,7 @@ header {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 
+<<<<<<< HEAD
 st.set_page_config(page_title="TrustIssues AI Approvals", layout="wide")
 
 st.markdown("""
@@ -33,6 +34,17 @@ footer { visibility: hidden; }
 /* --- Navbar --- */
 .navbar {
     background: linear-gradient(90deg, #0FB5A8, #056D63); /* Your brand's teal */
+=======
+st.set_page_config(page_title="RiskLens AI Approvals", layout="wide")
+
+st.markdown("""
+<style>
+body {
+    background: linear-gradient(to right, #f0f4f8, #d9e2ec);
+}
+.navbar {
+    background: linear-gradient(90deg, #0FB5A8, #056D63);
+>>>>>>> da53bd1 (Adding frontend)
     padding: 15px;
     border-radius: 10px;
     text-align: center;
@@ -41,6 +53,7 @@ footer { visibility: hidden; }
     color: white;
     margin-bottom: 25px;
 }
+<<<<<<< HEAD
 
 /* --- Cards & Containers --- */
 .card {
@@ -99,13 +112,30 @@ div[data-testid="stSelectbox"] div[data-testid="stMarkdownContainer"] {
 .pending {
     background-color: rgba(255, 152, 0, 0.05); /* Faint orange BG */
     border-left: 5px solid #FF9800; /* Orange */
+=======
+.card {
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 20px;
+    box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+}
+.high-priority {
+    background: linear-gradient(135deg, #ffcccc, #ff6666);
+}
+.pending {
+    background: linear-gradient(135deg, #ccf2ff, #66c2ff);
+>>>>>>> da53bd1 (Adding frontend)
 }
 </style>
 """, unsafe_allow_html=True)
 
 st.markdown('<div class="navbar">RiskLens AI - Approvals Dashboard</div>', unsafe_allow_html=True)
 
+<<<<<<< HEAD
 
+=======
+# Sorting option
+>>>>>>> da53bd1 (Adding frontend)
 sort_by = st.selectbox("Sort approvals by:", ["Risk Score (high → low)", "Last Submission (recent → old)"])
 
 if 'approvals' not in st.session_state:
@@ -139,7 +169,11 @@ else:
 # --- Navigation Function ---
 def navigate_to_vendor(case_id):
    st.session_state["case_id"] = case_id
+<<<<<<< HEAD
    st.switch_page("frontend/pages/vendor-info.py")
+=======
+   st.switch_page("pages/vendor-info.py")
+>>>>>>> da53bd1 (Adding frontend)
 
 
 # --- Corrected display_cards function for approval-page.py ---
