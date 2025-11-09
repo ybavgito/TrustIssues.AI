@@ -137,7 +137,7 @@ col_action1, col_action2 = st.columns(2)
 
 with col_action1:
     if st.button("📋 Review Pending Submissions", type="primary", use_container_width=True):
-        st.switch_page("pages/approvals.py")
+        st.switch_page("pages/approve-page.py")
         st.rerun()
 
 with col_action2:
