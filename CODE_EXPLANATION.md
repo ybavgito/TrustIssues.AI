@@ -1,9 +1,9 @@
-# RiskLens AI - Complete Code Explanation
+# TrustIssues AI - Complete Code Explanation
 
 ## 📁 Project Structure
 
 ```
-risklens-ai/
+trustissues-ai/
 ├── main.py                 # Entry point
 ├── src/
 │   ├── agent.py           # Main orchestrator (RiskLensAgent)

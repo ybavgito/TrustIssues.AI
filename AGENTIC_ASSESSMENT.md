@@ -1,4 +1,4 @@
-# Is RiskLens AI 100% Agentic? Assessment & Improvements
+# Is TrustIssuesAI 100% Agentic? Assessment & Improvements
 
 ## 🤔 Current Agentic Level: ~70%
 

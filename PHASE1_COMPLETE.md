@@ -274,7 +274,7 @@ Now that it's 100% agentic, Phase 2 focuses on making it a **better product**:
 
 ## ✅ Phase 1 Complete!
 
-**RiskLens AI is now 100% agentic:**
+**TrsutIssues AI is now 100% agentic:**
 - ✅ AI-powered risk assessment
 - ✅ Adaptive workflows
 - ✅ Active agent collaboration

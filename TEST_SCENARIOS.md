@@ -1,4 +1,4 @@
-# RiskLens AI - Test Scenarios Reference
+# TrustIssues AI - Test Scenarios Reference
 
 ## 📊 Overview
 
