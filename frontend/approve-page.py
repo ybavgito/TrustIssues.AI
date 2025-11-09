@@ -42,7 +42,7 @@ body {
 
 st.markdown('<div class="navbar">RiskLens AI - Approvals Dashboard</div>', unsafe_allow_html=True)
 
-# Sorting option
+
 sort_by = st.selectbox("Sort approvals by:", ["Risk Score (high → low)", "Last Submission (recent → old)"])
 
 if 'approvals' not in st.session_state:
