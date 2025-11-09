@@ -121,7 +121,7 @@ def login_page():
                 if username == "admin" and password == "password123":
                     st.success("Login Successful! Redirecting...")
                     st.session_state["logged_in"] = True
-                    st.experimental_rerun()
+                    st.rerun()
                 else:
                     st.error("Invalid Username or Password")
 
@@ -135,6 +135,6 @@ if __name__ == "__main__":
         st.write("This is your super secret main app content.")
         if st.button("Logout"):
             st.session_state["logged_in"] = False
-            st.experimental_rerun()
+            st.rerun()
     else:
         login_page()
